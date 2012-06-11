@@ -100,9 +100,9 @@ func escapeUnicode() parser {
 
 func escapeSingle() parser {
 	return func(in Vessel) *output {
-		out := all(static(BACKSLASH), oneOf(LEGAL_ESCAPES))(in)
+		out := collect(static(BACKSLASH), oneOf(LEGAL_ESCAPES))(in)
 		if out.matched {
-			switch string(out.match) {
+			switch string(out.children[1].match) {
 			case "a": out.match = []rune("\a")
 			case "b": out.match = []rune("\b")
 			case "f": out.match = []rune("\f")
