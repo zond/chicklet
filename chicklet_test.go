@@ -38,24 +38,11 @@ func TestOneLineComment(t *testing.T) {
 }
 
 func TestUntil(t *testing.T) {
-	if !until([]rune("foo"))(vessel("foo")).matched {
-		t.Error("\"foo\" has foo")
-	}
-	if string(until([]rune("foo"))(vessel("foo")).match) != "" {
-		t.Error("\"foo\" has \"\" before foo")
-	}
-	if until([]rune("foo"))(vessel("bar")).matched {
-		t.Error("\"baj\" is not foo")
-	}
-	if !until([]rune("foo"))(vessel("1foo")).matched {
-		t.Error("\"1foo\" has foo")
-	}
-	if string(until([]rune("foo"))(vessel("1foo")).match) != "1" {
-		t.Error("\"1foo\" has \"1\" before \"foo\"")
-	}
-	if string(until([]rune("foo"))(vessel("apabapa hej\n\rgnu åäöfoo")).match) != "apabapa hej\n\rgnu åäö" {
-		t.Error("\"apabapa hej\n\rgnu åäöfoo\" has \"apabapa hej\n\rgnu åäö\" before \"foo\"")
-	}
+	p := until([]rune("foo"))
+	parserTest(t, p, "foo", true, "")
+	parserTest(t, p, "bar", false, "")
+	parserTest(t, p, "1foo", true, "1")
+	parserTest(t, p, "apabapa hej\n\rgnu åäöfoo", true, "apabapa hej\n\rgnu åäö")
 }
 
 func TestMultiLineComment(t *testing.T) {
