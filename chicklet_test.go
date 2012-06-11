@@ -76,4 +76,7 @@ func TestStringLiteral(t *testing.T) {
 	parserTest(t, p, "\"a\"", true, "a")
 	parserTest(t, p, "\"asdf asdf a sdf\"", true, "asdf asdf a sdf")
 	parserTest(t, p, "\"hej \\\"kompis\\\"!\"", true, "hej \"kompis\"!")
+	parserTest(t, p, "\"hej\\nkompis\"", true, "hej\nkompis")
+	parserTest(t, p, "\"hej\\rkompis\"", true, "hej\rkompis")
+	parserTest(t, p, "\"hej\\tkompis\"", true, "hej\tkompis")
 }

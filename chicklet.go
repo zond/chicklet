@@ -27,7 +27,7 @@ var QUOT = []rune("\"")
 var ESC_QUOT = []rune("\\\"")
 var ESC_NL = []rune("\\n")
 var ESC_CR = []rune("\\r")
-var ESC_TAB = []rune("\\r")
+var ESC_TAB = []rune("\\t")
 
 type parser func(Vessel) *output
 
