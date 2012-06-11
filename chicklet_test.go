@@ -50,20 +50,8 @@ func TestUntil(t *testing.T) {
 func TestMultiLineComment(t *testing.T) {
 	p := multiLineComment()
 	parserTest(t, p, "/* kommentar\n\n*/", true, "/* kommentar\n\n*/")
-	s := "/* kommentar\n\n/* nested broken comment\n  \n \r*/"
-	if !multiLineComment()(vessel(s)).matched {
-		t.Error(s, "is comment!")
-	}
-	if string(multiLineComment()(vessel(s)).match) != s {
-		t.Error(s, "is", s)
-	}
-	s = "/* kommentar\n\n/* nested complete comment\n*/  \n \r*/"
-	if !multiLineComment()(vessel(s)).matched {
-		t.Error(s, "is comment!")
-	}
-	if string(multiLineComment()(vessel(s)).match) != s {
-		t.Error(s, "is", s)
-	}
+	parserTest(t, p, "/* kommentar\n\n/* nested broken comment\n  \n \r*/", true, "/* kommentar\n\n/* nested broken comment\n  \n \r*/")
+	parserTest(t, p, "/* kommentar\n\n/* nested complete comment\n*/  \n \r*/", true, "/* kommentar\n\n/* nested complete comment\n*/  \n \r*/")
 }
 
 func numberTester(t *testing.T, test string) {
