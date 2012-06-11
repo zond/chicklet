@@ -6,32 +6,37 @@ import (
 	"unicode"
 )
 
+func vessel(s string) {
+	return &StringVessel(s, position{})
+}
+
 func TestSatisfy(t *testing.T) {
-	if satisfy(unicode.IsSpace)(&StringVessel{"h", position{}}).matched {
+	if satisfy(unicode.IsSpace)(vessel("h")).matched {
 		t.Error("\"h\" is not space!")
 	}
-	if !satisfy(unicode.IsSpace)(&StringVessel{" ", position{}}).matched {
+	if !satisfy(unicode.IsSpace)(vessel(" ")).matched {
 		t.Error("\" \" is space!")
 	}
-	if !satisfy(unicode.IsSpace)(&StringVessel{"\n", position{}}).matched {
+	if !satisfy(unicode.IsSpace)(vessel("\n")).matched {
 		t.Error("\"\\n\" is space!")
 	}
-	if !satisfy(unicode.IsSpace)(&StringVessel{"\r", position{}}).matched {
+	if !satisfy(unicode.IsSpace)(vessel("\r")).matched {
 		t.Error("\"\\r\" is space!")
 	}
 }
-
+	
 func TestOneLineComment(t *testing.T) {
-	if !oneLineComment()(&StringVessel{"// kommentar", position{}}).matched {
+	if !oneLineComment()(vessel("// kommentar")).matched {
 		t.Error("\"// kommentar\" is comment!")
 	}
-	if oneLineComment()(&StringVessel{"kod // kommentar", position{}}).matched {
+	if oneLineComment()(vessel("kod // kommentar")).matched {
 		t.Error("\"kod // kommentar\" is not comment!")
 	}
 }
 
 func TestMultiLineComment(t *testing.T) {
-	if !oneLineComment()(&StringVessel{"// kommentar", position{}}).matched {
-		t.Error("\"// kommentar\" is comment!")
+	s := "/* kommentar\n\n*/"
+	if !multiLineComment()(vessel(s)).matched {
+		t.Error("\"",s,"\" is comment!")
 	}
 }
