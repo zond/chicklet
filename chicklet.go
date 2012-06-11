@@ -24,6 +24,9 @@ var BACKSLASH = []rune("\\")
 var NL = []rune("\n")
 var QUOT = []rune("\"")
 var LEGAL_ESCAPES = []rune("abfnrtv\\\"")
+var UNI2 = []rune("x")
+var UNI4 = []rune("u")
+var UNI8 = []rune("U")
 
 type parser func(Vessel) *output
 
@@ -33,32 +36,29 @@ type output struct {
 	matched bool
 	match []rune
 	children []*output
-}
-func (self *output) body() string {
-	if self.match != nil {
-		return string(self.match)
-	}
-	buffer := bytes.NewBufferString("")
-	for _, o := range self.children {
-		fmt.Fprint(buffer, o.body())
-	}
-	return string(buffer.Bytes())
+	content []rune
 }
 func (self *output) String() string {
-	return fmt.Sprint(string(self.match), self.children)
+	return fmt.Sprint(self.matched, " content:", string(self.content), " match:", string(self.match), " children:", self.children)
 }
 func (self *output) concatMatch(o *output) {
 	for _, r := range o.match {
 		self.match = append(self.match, r)
 	}
 }
+func (self *output) concatContent(o *output) {
+	for _, r := range o.content {
+		self.content = append(self.content, r)
+	}
+}
 func (self *output) concat(o *output) {
 	self.concatMatch(o)
+	self.concatContent(o)
 	self.children = append(self.children, o)
 }
 
 func FALSE() *output {
-	return &output{false, nil, nil}
+	return &output{false, nil, nil, nil}
 }
 func rary(r rune) []rune {
 	var ary []rune
@@ -74,14 +74,31 @@ func satisfy(check func(c rune) bool) parser {
 		target, ok := in.Next()
 		if ok && check(target) {
 			in.Pop(1)
-			return &output{true, rary(target), nil}
+			return &output{true, rary(target), nil, rary(target)}
 		}
 
 		return FALSE()
 	}
 }
 
-func escapeReplace() parser {
+func escapeUnicode() parser {
+	return func(in Vessel) *output {
+		out := any(collect(static(BACKSLASH), static(UNI2), count(hex(), 2)),
+			collect(static(BACKSLASH), static(UNI4), count(hex(), 4)),
+			collect(static(BACKSLASH), static(UNI8), count(hex(), 8)))(in)
+		if out.matched {
+			buffer := bytes.NewBufferString("0x")
+			fmt.Fprint(buffer, string(out.children[2].match))
+			var r rune
+			fmt.Fscanf(buffer, "%v", &r)
+			out.match = rary(r)
+			return out
+		}		
+		return FALSE()
+	}
+}
+
+func escapeSingle() parser {
 	return func(in Vessel) *output {
 		out := all(static(BACKSLASH), oneOf(LEGAL_ESCAPES))(in)
 		if out.matched {
@@ -102,11 +119,33 @@ func escapeReplace() parser {
 	}
 }
 
+func count(p parser, c int) parser {
+	return func(in Vessel) *output {
+		out := &output{true, nil, nil, nil}
+		for i := 0; i < c; i++ {
+			sub := p(in)
+			if !sub.matched {
+				in.Push(len(out.match))
+				return FALSE()
+			}
+			out.concat(sub)
+		}
+		sub := p(in)
+		if sub.matched {
+			out.concat(sub)
+			in.Push(len(out.match))
+			return FALSE()
+		}
+		return out
+	}
+	
+}
+
 func replace(str []rune, replacement []rune) parser {
 	return func(in Vessel) *output {
 		out := static(str)(in)
 		if out.matched {
-			return &output{true, replacement, nil}
+			return &output{true, replacement, nil, replacement}
 		}
 		return FALSE()
 	}
@@ -142,8 +181,10 @@ func until(cs []rune) parser {
 			if ok {
 				in.Pop(1)
 				out.match = append(out.match, next)
+				out.content = append(out.content, next)
 				if strings.Index(string(out.match), string(cs)) != -1 {
 					out.match = out.match[0:len(out.match) - len(cs)]
+					out.content = out.content[0:len(out.content) - len(cs)]
 					out.matched = true
 					in.Push(len(cs))
 					return out
@@ -154,6 +195,7 @@ func until(cs []rune) parser {
 		}
 		in.Push(len(out.match))
 		out.match = nil
+		out.content = nil
 		return out
 	}
 }
@@ -162,13 +204,17 @@ func digit() parser {
 	return oneOf([]rune("0123456789"))
 }
 
+func hex() parser {
+	return oneOf([]rune("0123456789abcdefABCDEF"))
+}
+
 func number() parser {
 	return any(collect(many1(digit()), static([]rune(".")), many1(digit())),
 		many1(digit()))
 }
 
 func stringLiteral() parser {
-	return between(static(QUOT), static(QUOT), many(any(escapeReplace(), noneOf(QUOT))))
+	return between(static(QUOT), static(QUOT), many(any(escapeUnicode(), escapeSingle(), noneOf(QUOT))))
 }
 
 func oneOf(cs []rune) parser {
@@ -177,7 +223,7 @@ func oneOf(cs []rune) parser {
 		if ok {
 			if strings.IndexRune(string(cs), next) != -1 {
 				in.Pop(1)
-				return &output{true, rary(next), nil}
+				return &output{true, rary(next), nil, rary(next)}
 			}
 		}
 		return FALSE()
@@ -190,7 +236,7 @@ func noneOf(cs []rune) parser {
 		if ok {
 			if strings.IndexRune(string(cs), next) == -1 {
 				in.Pop(1)
-				return &output{true, rary(next), nil}
+				return &output{true, rary(next), nil, rary(next)}
 			}
 		}
 		return FALSE()
@@ -205,7 +251,7 @@ func lexeme(match parser) parser {
 // Match a parser 0 or more times.
 func many(match parser) parser {
 	return func(in Vessel) *output {
-		out := &output{true, nil, nil}
+		out := &output{true, nil, nil, nil}
 		for {
 			sub := match(in)
 			if !sub.matched {
@@ -285,11 +331,11 @@ func all(parsers... parser) parser {
 	})
 }
 
-// Match all parsers, collecting their outputs into a slice.
+// Match all parsers, collecting their outputs
 // If one parser fails, the whole thing fails.
 func collect(parsers... parser) parser {
 	return try(func(in Vessel) *output {
-		out := &output{true, nil, nil}
+		out := &output{true, nil, nil, nil}
 		for _, parser := range parsers {
 			sub := parser(in)
 			if sub.matched {
@@ -306,13 +352,13 @@ func collect(parsers... parser) parser {
 
 // Try matching begin, match, and then end.
 func between(begin parser, end parser, match parser) parser {
-	return func(in Vessel) *output {
-		out := try(collect(begin, match, end))(in)
+	return try(func(in Vessel) *output {
+		out := collect(begin, match, end)(in)
 		if out.matched {
-			return out.children[1]
+			out.match = out.children[1].match
 		}
 		return out
-	}
+	})
 }
 
 // Lexeme parser for `match' wrapped in parens.
@@ -328,16 +374,18 @@ func symbol(str []rune) parser {
 // Match a string and pop the string's length from the input.
 func static(str []rune) parser {
 	return func(in Vessel) *output {
-		out := &output{true, nil, nil}
+		out := &output{true, nil, nil, nil}
 		for _, v := range str {
 			next, ok := in.Next()
 			if ok && next == v {
 				out.match = append(out.match, next)
+				out.content = append(out.content, next)
 				in.Pop(1)
 			} else {
 				out.matched = false
 				in.Push(len(out.match))
 				out.match = nil
+				out.content = nil
 				return out
 			}
 		}
