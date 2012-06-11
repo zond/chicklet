@@ -135,7 +135,7 @@ func number() parser {
 }
 
 func stringLiteral() parser {
-	return between(static(QUOT), static(QUOT), noneOf(QUOT))
+	return between(static(QUOT), static(QUOT), many(noneOf(QUOT)))
 }
 
 func oneOf(cs []rune) parser {
