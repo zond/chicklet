@@ -4,10 +4,11 @@ package chicklet
 import (
 	"testing"
 	"unicode"
+//	"fmt"
 )
 
 func vessel(s string) *StringVessel {
-	return &StringVessel{s, position{}}
+	return &StringVessel{[]rune(s), position{}}
 }
 
 func TestSatisfy(t *testing.T) {
@@ -35,7 +36,7 @@ func TestOneLineComment(t *testing.T) {
 }
 /*
 func TestMultiLineComment(t *testing.T) {
-
+        s := fmt.Sprint("/","* kommentar\n\n*", "/")
 	if !multiLineComment()(vessel(s)).matched {
 		t.Error("\"",s,"\" is comment!")
 	}

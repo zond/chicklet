@@ -83,25 +83,46 @@ func whitespace() parser {
 }
 
 func oneLineComment() parser {
-	return all(static("//"), many(noneOf("\n")))
+	return collect(static([]rune("//")), many(noneOf([]rune("\n"))))
 }
 
 func multiLineComment() parser {
-	return all(static("/*"), inMulti())
+	return collect(static([]rune("/*")), inMulti())
 }
 
 func inMulti() parser {
-	return any(static("*/"),
+	return any(static([]rune("*/")),
+		all(many1(noneOf([]rune([]rune("/*")))), inMulti()),
   		all(multiLineComment(), inMulti()),
-		all(many1(noneOf("/*")), inMulti()),
-	all(oneOf("/*"), inMulti()))
+	all(oneOf([]rune("/*")), inMulti()))
 }
 
-func oneOf(cs string) parser {
+func until(cs []rune) parser {
+	return func(in Vessel) *output {
+		out := FALSE()
+		for {
+			next, ok := in.Next()
+			if ok {
+				out.matched = true
+				out.match = append(out.match, next)
+				if strings.Index(string(out.match), string(cs)) != -1 {
+					out.match = out.match[0:len(out.match) - len(cs)]
+					in.Push(len(cs))
+					return out
+				}
+			} else {
+				break
+			}
+		}
+		return out
+	}
+}
+
+func oneOf(cs []rune) parser {
 	return func(in Vessel) *output {
 		next, ok := in.Next()
 		if ok {
-			if strings.IndexRune(cs, next) != -1 {
+			if strings.IndexRune(string(cs), next) != -1 {
 				in.Pop(1)
 				return &output{true, rary(next), nil}
 			}
@@ -110,11 +131,11 @@ func oneOf(cs string) parser {
 	}
 }
 
-func noneOf(cs string) parser {
+func noneOf(cs []rune) parser {
 	return func(in Vessel) *output {
 		next, ok := in.Next()
 		if ok {
-			if strings.IndexRune(cs, next) == -1 {
+			if strings.IndexRune(string(cs), next) == -1 {
 				in.Pop(1)
 				return &output{true, rary(next), nil}
 			}
@@ -250,16 +271,16 @@ func between(begin parser, end parser, match parser) parser {
 
 // Lexeme parser for `match' wrapped in parens.
 func parens(match parser) parser { 
-	return lexeme(between(symbol("("), symbol(")"), match)) 
+	return lexeme(between(symbol([]rune("(")), symbol([]rune(")")), match)) 
 }
 
 // Match a string and consume any following whitespace.
-func symbol(str string) parser { 
+func symbol(str []rune) parser { 
 	return lexeme(static(str)) 
 }
 
 // Match a string and pop the string's length from the input.
-func static(str string) parser {
+func static(str []rune) parser {
 	return func(in Vessel) *output {
 		for _, v := range str {
 			next, ok := in.Next()
@@ -288,7 +309,7 @@ func try(match parser) parser {
 
 // Basic string Vessel for parsing over a string input.
 type StringVessel struct {
-	input    string
+	input    []rune
 	position position
 }
 
@@ -296,12 +317,7 @@ func (self *StringVessel) Next() (rune, bool) {
 	if len(self.input) < self.position.offset + 1 && self.position.offset >= 0 {
 		return 0, false
 	}
-	for index, r := range self.input {
-		if index == self.position.offset {
-			return r, true
-		}
-	}
-	return 0, false
+	return self.input[self.position.offset], true
 }
 
 func (self *StringVessel) Pop(i int) { 
@@ -312,7 +328,9 @@ func (self *StringVessel) Push(i int) {
 	self.position.offset -= i 
 }
 
-func (self *StringVessel) SetInput(in string) { self.input = in }
+func (self *StringVessel) SetInput(in string) { 
+	self.input = []rune(in) 
+}
 
 func (self *StringVessel) GetPosition() position {
 	return self.position
