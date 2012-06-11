@@ -45,6 +45,9 @@ func TestUntil(t *testing.T) {
 	if string(until([]rune("bajs"))(vessel("1bajs")).match) != "1" {
 		t.Error("\"1bajs\" is 1 and bajs")
 	}
+	if string(until([]rune("bajs"))(vessel("apabapa hej\n\rgnu åäöbajs")).match) != "apabapa hej\n\rgnu åäö" {
+		t.Error("\"1bajs\" is 1 and bajs")
+	}
 }
 
 /*
