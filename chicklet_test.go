@@ -39,6 +39,12 @@ func TestUntil(t *testing.T) {
 	if until([]rune("bajs"))(vessel("bajs")).matched {
 		t.Error("\"bajs\" is bajs")
 	}
+	if !until([]rune("bajs"))(vessel("baj")).matched {
+		t.Error("\"baj\" is not bajs")
+	}
+	if string(until([]rune("bajs"))(vessel("baj")).match) != "baj" {
+		t.Error("\"baj\" is baj")
+	}
 	if !until([]rune("bajs"))(vessel("1bajs")).matched {
 		t.Error("\"1bajs\" is more than bajs")
 	}
