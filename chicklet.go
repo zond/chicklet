@@ -166,14 +166,7 @@ func noneOf(cs []rune) parser {
 
 // Match a parser and skip whitespace
 func lexeme(match parser) parser {
-	return try(func(in Vessel) *output {
-		out := match(in)
-		if out.matched {
-			whitespace()(in)
-			return out
-		}
-		return FALSE()
-	})
+	return collect(match, many(whitespace()))
 }
 
 // Match a parser 0 or more times.
