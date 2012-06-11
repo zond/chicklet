@@ -4,7 +4,6 @@ package chicklet
 import (
 	"testing"
 	"unicode"
-	"fmt"
 )
 
 func vessel(s string) *StringVessel {
@@ -72,17 +71,8 @@ func TestNumber(t *testing.T) {
 	parserTest(t, p, "2.01.1", true, "2.01")
 }
 
-func stringLiteralTester(t *testing.T, s string) {
-	if !stringLiteral()(vessel(s)).matched {
-		t.Error(s,"is a string literal!")
-	}
-	m := string(stringLiteral()(vessel(s)).match)
-	if fmt.Sprint("\"", m, "\"") != s {
-		t.Error(s,"is",s,"but got",m)
-	}
-}
-
 func TestStringLiteral(t *testing.T) {
-	stringLiteralTester(t, "\"a\"")
-	stringLiteralTester(t, "\"aasdfasd  fasfd\"")
+	p := stringLiteral()
+	parserTest(t, p, "\"a\"", true, "a")
+	parserTest(t, p, "\"asdf asdf a sdf\"", true, "asdf asdf a sdf")
 }
