@@ -54,36 +54,22 @@ func TestMultiLineComment(t *testing.T) {
 	parserTest(t, p, "/* kommentar\n\n/* nested complete comment\n*/  \n \r*/", true, "/* kommentar\n\n/* nested complete comment\n*/  \n \r*/")
 }
 
-func numberTester(t *testing.T, test string) {
-	if !number()(vessel(test)).matched {
-		t.Error(test, "is number")
-	}
-	if string(number()(vessel(test)).match) != test {
-		t.Error(test,"is",test)
-	}
-}
-
-func badNumberTester(t *testing.T, test string) {
-	if number()(vessel(test)).matched {
-		t.Error(test, "is not number")
-	}
-	if string(number()(vessel(test)).match) != "" {
-		t.Error(test,"should not consume")
-	}
-}
-
 func TestNumber(t *testing.T) {
-	numberTester(t, "0")
-	numberTester(t, "01")
-	numberTester(t, "20")
-	numberTester(t, "3434")
-	numberTester(t, "3434.0")
-	numberTester(t, "3434.131")
-	numberTester(t, "0.131")
-	badNumberTester(t, ".2")
-	badNumberTester(t, "f")
-	badNumberTester(t, "f2")
-	badNumberTester(t, "f.2")
+	p := number()
+	parserTest(t, p, "0", true, "0")
+	parserTest(t, p, "01", true, "01")
+	parserTest(t, p, "20", true, "20")
+	parserTest(t, p, "344", true, "344")
+	parserTest(t, p, "34234.01", true, "34234.01")
+	parserTest(t, p, "2134.11", true, "2134.11")
+	parserTest(t, p, "0.131", true, "0.131")
+	parserTest(t, p, ".2", false, "")
+	parserTest(t, p, "f", false, "")
+	parserTest(t, p, "f2", false, "")
+	parserTest(t, p, "f.2", false, "")
+	parserTest(t, p, "2.f", true, "2")
+	parserTest(t, p, "2.01x", true, "2.01")
+	parserTest(t, p, "2.01.1", true, "2.01")
 }
 
 func stringLiteralTester(t *testing.T, s string) {
