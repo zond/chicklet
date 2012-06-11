@@ -4,7 +4,7 @@ package chicklet
 import (
 	"testing"
 	"unicode"
-//	"fmt"
+	"fmt"
 )
 
 func vessel(s string) *StringVessel {
@@ -36,31 +36,29 @@ func TestOneLineComment(t *testing.T) {
 }
 
 func TestUntil(t *testing.T) {
-	if until([]rune("foo"))(vessel("foo")).matched {
-		t.Error("\"foo\" is foo")
+	if !until([]rune("foo"))(vessel("foo")).matched {
+		t.Error("\"foo\" has foo")
 	}
-	if !until([]rune("foo"))(vessel("baj")).matched {
+	if string(until([]rune("foo"))(vessel("foo")).match) != "" {
+		t.Error("\"foo\" has \"\" before foo")
+	}
+	if until([]rune("foo"))(vessel("bar")).matched {
 		t.Error("\"baj\" is not foo")
 	}
-	if string(until([]rune("foo"))(vessel("baj")).match) != "baj" {
-		t.Error("\"baj\" is baj")
-	}
 	if !until([]rune("foo"))(vessel("1foo")).matched {
-		t.Error("\"1foo\" is more than foo")
+		t.Error("\"1foo\" has foo")
 	}
 	if string(until([]rune("foo"))(vessel("1foo")).match) != "1" {
-		t.Error("\"1foo\" is 1 and foo")
+		t.Error("\"1foo\" has \"1\" before \"foo\"")
 	}
 	if string(until([]rune("foo"))(vessel("apabapa hej\n\rgnu åäöfoo")).match) != "apabapa hej\n\rgnu åäö" {
-		t.Error("\"apabapa hej\n\rgnu åäöfoo\" is 1 and foo")
+		t.Error("\"apabapa hej\n\rgnu åäöfoo\" has \"apabapa hej\n\rgnu åäö\" before \"foo\"")
 	}
 }
 
-/*
 func TestMultiLineComment(t *testing.T) {
-        s := fmt.Sprint("/","* kommentar\n\n*", "/")
+        s := fmt.Sprint("/* kommentar\n\n*/")
 	if !multiLineComment()(vessel(s)).matched {
-		t.Error("\"",s,"\" is comment!")
+		t.Error(s, "is comment!")
 	}
 }
-*/

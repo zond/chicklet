@@ -17,6 +17,11 @@ type Vessel interface {
 	Push(int)
 }
 
+var SLASH2 = []rune("//")
+var SLASHS = []rune("/*")
+var SSLASH = []rune("*/")
+var NL = []rune("\n")
+
 type parser func(Vessel) *output
 
 type input interface{}
@@ -83,20 +88,23 @@ func whitespace() parser {
 }
 
 func oneLineComment() parser {
-	return collect(static([]rune("//")), many(noneOf([]rune("\n"))))
+	return collect(static(SLASH2), many(noneOf(NL)))
 }
 
 func multiLineComment() parser {
-	return collect(static([]rune("/*")), inMulti())
+	return collect(static(SLASHS), inMulti())
 }
 
 func inMulti() parser {
-	return any(static([]rune("*/")),
-		all(many1(noneOf([]rune([]rune("/*")))), inMulti()),
-  		all(multiLineComment(), inMulti()),
-	all(oneOf([]rune("/*")), inMulti()))
+	return func(in Vessel) *output {
+		return any(collect(until(SLASHS), multiLineComment(), inMulti()),
+			collect(until(SSLASH),static(SSLASH)))(in)
+	}
 }
 
+/*
+ * Will consume until cs is found. Will match if cs is found, not otherwise.
+ */
 func until(cs []rune) parser {
 	return func(in Vessel) *output {
 		out := FALSE()
@@ -104,20 +112,19 @@ func until(cs []rune) parser {
 			next, ok := in.Next()
 			if ok {
 				in.Pop(1)
-				out.matched = true
 				out.match = append(out.match, next)
 				if strings.Index(string(out.match), string(cs)) != -1 {
 					out.match = out.match[0:len(out.match) - len(cs)]
+					out.matched = true
 					in.Push(len(cs))
-					if len(out.match) == 0 {
-						out.matched = false
-					}
 					return out
 				}
 			} else {
 				break
 			}
 		}
+		in.Push(len(out.match))
+		out.match = nil
 		return out
 	}
 }
@@ -286,14 +293,20 @@ func symbol(str []rune) parser {
 // Match a string and pop the string's length from the input.
 func static(str []rune) parser {
 	return func(in Vessel) *output {
+		out := &output{true, nil, nil}
 		for _, v := range str {
 			next, ok := in.Next()
-			if !ok || next != v {
-				return FALSE()
+			if ok && next == v {
+				out.match = append(out.match, next)
+				in.Pop(1)
+			} else {
+				out.matched = false
+				in.Push(len(out.match))
+				out.match = nil
+				return out
 			}
 		}
-		in.Pop(len(str))
-		return &output{true, []rune(str), nil}
+		return out
 	}
 }
 
@@ -315,6 +328,9 @@ func try(match parser) parser {
 type StringVessel struct {
 	input    []rune
 	position position
+}
+func (self *StringVessel) String() string {
+	return fmt.Sprint(self.position, "@", string(self.input))
 }
 
 func (self *StringVessel) Next() (rune, bool) {
