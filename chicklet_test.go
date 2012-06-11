@@ -124,5 +124,5 @@ func stringLiteralTester(t *testing.T, s string) {
 
 func TestStringLiteral(t *testing.T) {
 	stringLiteralTester(t, "\"a\"")
-	stringLiteralTester(t, "\"aasdfasdfasfd\"")
+	stringLiteralTester(t, "\"aasdfasd  fasfd\"")
 }
