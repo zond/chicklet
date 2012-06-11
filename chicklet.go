@@ -103,11 +103,15 @@ func until(cs []rune) parser {
 		for {
 			next, ok := in.Next()
 			if ok {
+				in.Pop(1)
 				out.matched = true
 				out.match = append(out.match, next)
 				if strings.Index(string(out.match), string(cs)) != -1 {
 					out.match = out.match[0:len(out.match) - len(cs)]
 					in.Push(len(cs))
+					if len(out.match) == 0 {
+						out.matched = false
+					}
 					return out
 				}
 			} else {

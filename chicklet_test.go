@@ -34,6 +34,13 @@ func TestOneLineComment(t *testing.T) {
 		t.Error("\"kod // kommentar\" is not comment!")
 	}
 }
+
+func TestUntil(t *testing.T) {
+	if until([]rune("bajs"))(vessel("bajs")).matched {
+		t.Error("\"bajs\" is bajs")
+	}
+}
+
 /*
 func TestMultiLineComment(t *testing.T) {
         s := fmt.Sprint("/","* kommentar\n\n*", "/")
