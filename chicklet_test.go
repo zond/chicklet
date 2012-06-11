@@ -75,4 +75,5 @@ func TestStringLiteral(t *testing.T) {
 	p := stringLiteral()
 	parserTest(t, p, "\"a\"", true, "a")
 	parserTest(t, p, "\"asdf asdf a sdf\"", true, "asdf asdf a sdf")
+	parserTest(t, p, "\"hej \\\"kompis\\\"!\"", true, "hej \"kompis\"!")
 }
