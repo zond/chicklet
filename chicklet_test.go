@@ -36,23 +36,23 @@ func TestOneLineComment(t *testing.T) {
 }
 
 func TestUntil(t *testing.T) {
-	if until([]rune("bajs"))(vessel("bajs")).matched {
-		t.Error("\"bajs\" is bajs")
+	if until([]rune("foo"))(vessel("foo")).matched {
+		t.Error("\"foo\" is foo")
 	}
-	if !until([]rune("bajs"))(vessel("baj")).matched {
-		t.Error("\"baj\" is not bajs")
+	if !until([]rune("foo"))(vessel("baj")).matched {
+		t.Error("\"baj\" is not foo")
 	}
-	if string(until([]rune("bajs"))(vessel("baj")).match) != "baj" {
+	if string(until([]rune("foo"))(vessel("baj")).match) != "baj" {
 		t.Error("\"baj\" is baj")
 	}
-	if !until([]rune("bajs"))(vessel("1bajs")).matched {
-		t.Error("\"1bajs\" is more than bajs")
+	if !until([]rune("foo"))(vessel("1foo")).matched {
+		t.Error("\"1foo\" is more than foo")
 	}
-	if string(until([]rune("bajs"))(vessel("1bajs")).match) != "1" {
-		t.Error("\"1bajs\" is 1 and bajs")
+	if string(until([]rune("foo"))(vessel("1foo")).match) != "1" {
+		t.Error("\"1foo\" is 1 and foo")
 	}
-	if string(until([]rune("bajs"))(vessel("apabapa hej\n\rgnu åäöbajs")).match) != "apabapa hej\n\rgnu åäö" {
-		t.Error("\"1bajs\" is 1 and bajs")
+	if string(until([]rune("foo"))(vessel("apabapa hej\n\rgnu åäöfoo")).match) != "apabapa hej\n\rgnu åäö" {
+		t.Error("\"apabapa hej\n\rgnu åäöfoo\" is 1 and foo")
 	}
 }
 
