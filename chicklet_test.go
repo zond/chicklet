@@ -4,7 +4,6 @@ package chicklet
 import (
 	"testing"
 	"unicode"
-	"fmt"
 )
 
 func vessel(s string) *StringVessel {
@@ -57,8 +56,25 @@ func TestUntil(t *testing.T) {
 }
 
 func TestMultiLineComment(t *testing.T) {
-        s := fmt.Sprint("/* kommentar\n\n*/")
+        s := "/* kommentar\n\n*/"
 	if !multiLineComment()(vessel(s)).matched {
 		t.Error(s, "is comment!")
+	}
+	if string(multiLineComment()(vessel(s)).match) != s {
+		t.Error(s, "is", s)
+	}
+	s = "/* kommentar\n\n/* nested broken comment\n  \n \r*/"
+	if !multiLineComment()(vessel(s)).matched {
+		t.Error(s, "is comment!")
+	}
+	if string(multiLineComment()(vessel(s)).match) != s {
+		t.Error(s, "is", s)
+	}
+	s = "/* kommentar\n\n/* nested complete comment\n*/  \n \r*/"
+	if !multiLineComment()(vessel(s)).matched {
+		t.Error(s, "is comment!")
+	}
+	if string(multiLineComment()(vessel(s)).match) != s {
+		t.Error(s, "is", s)
 	}
 }
