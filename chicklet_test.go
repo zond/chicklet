@@ -26,15 +26,17 @@ func parserTest(t *testing.T, p parser, in string, m bool, exp string) {
 }
 
 func TestSatisfy(t *testing.T) {
-	parserTest(t, satisfy(unicode.IsSpace), "h", false, "")
-	parserTest(t, satisfy(unicode.IsSpace), " ", true, " ")
-	parserTest(t, satisfy(unicode.IsSpace), "\n", true, "\n")
-	parserTest(t, satisfy(unicode.IsSpace), "\r", true, "\r")
+	p := satisfy(unicode.IsSpace)
+	parserTest(t, p, "h", false, "")
+	parserTest(t, p, " ", true, " ")
+	parserTest(t, p, "\n", true, "\n")
+	parserTest(t, p, "\r", true, "\r")
 }
 	
 func TestOneLineComment(t *testing.T) {
-	parserTest(t, oneLineComment(), "// kommentar", true, "// kommentar")
-	parserTest(t, oneLineComment(), "kod // kommentar", false, "")
+	p := oneLineComment()
+	parserTest(t, p, "// kommentar", true, "// kommentar")
+	parserTest(t, p, "kod // kommentar", false, "")
 }
 
 func TestUntil(t *testing.T) {
@@ -46,14 +48,9 @@ func TestUntil(t *testing.T) {
 }
 
 func TestMultiLineComment(t *testing.T) {
-        s := "/* kommentar\n\n*/"
-	if !multiLineComment()(vessel(s)).matched {
-		t.Error(s, "is comment!")
-	}
-	if string(multiLineComment()(vessel(s)).match) != s {
-		t.Error(s, "is", s)
-	}
-	s = "/* kommentar\n\n/* nested broken comment\n  \n \r*/"
+	p := multiLineComment()
+	parserTest(t, p, "/* kommentar\n\n*/", true, "/* kommentar\n\n*/")
+	s := "/* kommentar\n\n/* nested broken comment\n  \n \r*/"
 	if !multiLineComment()(vessel(s)).matched {
 		t.Error(s, "is comment!")
 	}
