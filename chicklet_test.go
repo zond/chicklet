@@ -33,12 +33,8 @@ func TestSatisfy(t *testing.T) {
 }
 	
 func TestOneLineComment(t *testing.T) {
-	if !oneLineComment()(vessel("// kommentar")).matched {
-		t.Error("\"// kommentar\" is comment!")
-	}
-	if oneLineComment()(vessel("kod // kommentar")).matched {
-		t.Error("\"kod // kommentar\" is not comment!")
-	}
+	parserTest(t, oneLineComment(), "// kommentar", true, "// kommentar")
+	parserTest(t, oneLineComment(), "kod // kommentar", false, "")
 }
 
 func TestUntil(t *testing.T) {
