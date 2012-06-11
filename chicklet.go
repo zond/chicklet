@@ -20,14 +20,10 @@ type Vessel interface {
 var SLASH2 = []rune("//")
 var SLASHS = []rune("/*")
 var SSLASH = []rune("*/")
+var BACKSLASH = []rune("\\")
 var NL = []rune("\n")
-var CR = []rune("\r")
-var TAB = []rune("\t")
 var QUOT = []rune("\"")
-var ESC_QUOT = []rune("\\\"")
-var ESC_NL = []rune("\\n")
-var ESC_CR = []rune("\\r")
-var ESC_TAB = []rune("\\t")
+var LEGAL_ESCAPES = []rune("abfnrtv\\\"")
 
 type parser func(Vessel) *output
 
@@ -85,8 +81,25 @@ func satisfy(check func(c rune) bool) parser {
 	}
 }
 
-func stringEscape() parser {
-	return any(replace(ESC_QUOT, QUOT), replace(ESC_NL, NL), replace(ESC_CR, CR), replace(ESC_TAB, TAB))
+func escapeReplace() parser {
+	return func(in Vessel) *output {
+		out := all(static(BACKSLASH), oneOf(LEGAL_ESCAPES))(in)
+		if out.matched {
+			switch string(out.match) {
+			case "a": out.match = []rune("\a")
+			case "b": out.match = []rune("\b")
+			case "f": out.match = []rune("\f")
+			case "n": out.match = []rune("\n")
+			case "r": out.match = []rune("\r")
+			case "t": out.match = []rune("\t")
+			case "v": out.match = []rune("\v")
+			case "\\": out.match = []rune("\\")
+			case "\"": out.match = []rune("\"")
+			}
+			return out
+		} 
+		return FALSE()
+	}
 }
 
 func replace(str []rune, replacement []rune) parser {
@@ -155,7 +168,7 @@ func number() parser {
 }
 
 func stringLiteral() parser {
-	return between(static(QUOT), static(QUOT), many(any(stringEscape(), noneOf(QUOT))))
+	return between(static(QUOT), static(QUOT), many(any(escapeReplace(), noneOf(QUOT))))
 }
 
 func oneOf(cs []rune) parser {
