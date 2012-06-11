@@ -129,6 +129,15 @@ func until(cs []rune) parser {
 	}
 }
 
+func digit() parser {
+	return oneOf([]rune("0123456789"))
+}
+
+func number() parser {
+	return any(collect(many1(digit()), static([]rune(".")), many1(digit())),
+		many1(digit()))
+}
+
 func oneOf(cs []rune) parser {
 	return func(in Vessel) *output {
 		next, ok := in.Next()

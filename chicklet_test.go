@@ -78,3 +78,35 @@ func TestMultiLineComment(t *testing.T) {
 		t.Error(s, "is", s)
 	}
 }
+
+func numberTester(t *testing.T, test string) {
+	if !number()(vessel(test)).matched {
+		t.Error(test, "is number")
+	}
+	if string(number()(vessel(test)).match) != test {
+		t.Error(test,"is",test)
+	}
+}
+
+func badNumberTester(t *testing.T, test string) {
+	if number()(vessel(test)).matched {
+		t.Error(test, "is not number")
+	}
+	if string(number()(vessel(test)).match) != "" {
+		t.Error(test,"should not consume")
+	}
+}
+
+func TestNumber(t *testing.T) {
+	numberTester(t, "0")
+	numberTester(t, "01")
+	numberTester(t, "20")
+	numberTester(t, "3434")
+	numberTester(t, "3434.0")
+	numberTester(t, "3434.131")
+	numberTester(t, "0.131")
+	badNumberTester(t, ".2")
+	badNumberTester(t, "f")
+	badNumberTester(t, "f2")
+	badNumberTester(t, "f.2")
+}
