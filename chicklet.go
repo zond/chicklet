@@ -21,7 +21,13 @@ var SLASH2 = []rune("//")
 var SLASHS = []rune("/*")
 var SSLASH = []rune("*/")
 var NL = []rune("\n")
+var CR = []rune("\r")
+var TAB = []rune("\t")
 var QUOT = []rune("\"")
+var ESC_QUOT = []rune("\\\"")
+var ESC_NL = []rune("\\n")
+var ESC_CR = []rune("\\r")
+var ESC_TAB = []rune("\\r")
 
 type parser func(Vessel) *output
 
@@ -75,6 +81,20 @@ func satisfy(check func(c rune) bool) parser {
 			return &output{true, rary(target), nil}
 		}
 
+		return FALSE()
+	}
+}
+
+func stringEscape() parser {
+	return any(replace(ESC_QUOT, QUOT), replace(ESC_NL, NL), replace(ESC_CR, CR), replace(ESC_TAB, TAB))
+}
+
+func replace(str []rune, replacement []rune) parser {
+	return func(in Vessel) *output {
+		out := static(str)(in)
+		if out.matched {
+			return &output{true, replacement, nil}
+		}
 		return FALSE()
 	}
 }
@@ -135,7 +155,7 @@ func number() parser {
 }
 
 func stringLiteral() parser {
-	return between(static(QUOT), static(QUOT), many(noneOf(QUOT)))
+	return between(static(QUOT), static(QUOT), many(any(stringEscape(), noneOf(QUOT))))
 }
 
 func oneOf(cs []rune) parser {
