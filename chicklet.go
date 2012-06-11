@@ -83,7 +83,7 @@ func whitespace() parser {
 }
 
 func oneLineComment() parser {
-	return all(try(static("//")), many(noneOf("\n")))
+	return all(static("//"), many(noneOf("\n")))
 }
 
 func multiLineComment() parser {

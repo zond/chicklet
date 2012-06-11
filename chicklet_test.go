@@ -20,3 +20,18 @@ func TestSatisfy(t *testing.T) {
 		t.Error("\"\\r\" is space!")
 	}
 }
+
+func TestOneLineComment(t *testing.T) {
+	if !oneLineComment()(&StringVessel{"// kommentar", position{}}).matched {
+		t.Error("\"// kommentar\" is comment!")
+	}
+	if oneLineComment()(&StringVessel{"kod // kommentar", position{}}).matched {
+		t.Error("\"kod // kommentar\" is not comment!")
+	}
+}
+
+func TestMultiLineComment(t *testing.T) {
+	if !oneLineComment()(&StringVessel{"// kommentar", position{}}).matched {
+		t.Error("\"// kommentar\" is comment!")
+	}
+}
