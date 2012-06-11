@@ -11,19 +11,25 @@ func vessel(s string) *StringVessel {
 	return &StringVessel{[]rune(s), position{}}
 }
 
+func parserTest(t *testing.T, p parser, in string, m bool, exp string) {
+	o := p(vessel(in))
+	if o.matched != m {
+		if m {
+			t.Error("expected",in,"to match",p,"but it didn't")
+		} else {
+			t.Error("expected",in,"to NOT match",p,"but it DID")
+		}
+	}
+	if string(o.match) != exp {
+		t.Error("expected",p,"parsing",in,"to generate",exp,"but it generated",string(o.match))
+	} 
+}
+
 func TestSatisfy(t *testing.T) {
-	if satisfy(unicode.IsSpace)(vessel("h")).matched {
-		t.Error("\"h\" is not space!")
-	}
-	if !satisfy(unicode.IsSpace)(vessel(" ")).matched {
-		t.Error("\" \" is space!")
-	}
-	if !satisfy(unicode.IsSpace)(vessel("\n")).matched {
-		t.Error("\"\\n\" is space!")
-	}
-	if !satisfy(unicode.IsSpace)(vessel("\r")).matched {
-		t.Error("\"\\r\" is space!")
-	}
+	parserTest(t, satisfy(unicode.IsSpace), "h", false, "")
+	parserTest(t, satisfy(unicode.IsSpace), " ", true, " ")
+	parserTest(t, satisfy(unicode.IsSpace), "\n", true, "\n")
+	parserTest(t, satisfy(unicode.IsSpace), "\r", true, "\r")
 }
 	
 func TestOneLineComment(t *testing.T) {
