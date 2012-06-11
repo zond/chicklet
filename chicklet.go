@@ -21,6 +21,7 @@ var SLASH2 = []rune("//")
 var SLASHS = []rune("/*")
 var SSLASH = []rune("*/")
 var NL = []rune("\n")
+var QUOT = []rune("\"")
 
 type parser func(Vessel) *output
 
@@ -49,14 +50,9 @@ func (self *output) concatMatch(o *output) {
 		self.match = append(self.match, r)
 	}
 }
-func (self *output) concatChildren(o *output) {
-	for _, c := range o.children {
-		self.children = append(self.children, c)
-	}
-}
 func (self *output) concat(o *output) {
 	self.concatMatch(o)
-	self.concatChildren(o)
+	self.children = append(self.children, o)
 }
 
 func FALSE() *output {
@@ -136,6 +132,10 @@ func digit() parser {
 func number() parser {
 	return any(collect(many1(digit()), static([]rune(".")), many1(digit())),
 		many1(digit()))
+}
+
+func stringLiteral() parser {
+	return between(static(QUOT), static(QUOT), noneOf(QUOT))
 }
 
 func oneOf(cs []rune) parser {
