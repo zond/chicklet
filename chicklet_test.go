@@ -91,6 +91,11 @@ func TestCount(t *testing.T) {
 	parserTest(t, p, "0123", false, "", "", nil)
 }
 
+func TestLexeme(t *testing.T) {
+	p := lexeme(digit())
+	parserTest(t, p, "0", true, "0", "0", nil)
+}
+
 func TestStringLiteral(t *testing.T) {
 	p := stringLiteral()
 	parserTest(t, p, "\"a\"", true, "a", "\"a\"", "a")

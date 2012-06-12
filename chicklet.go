@@ -164,7 +164,7 @@ func replace(str []rune, replacement []rune) parser {
 }
 
 func whitespace() parser {
-	return many(any(satisfy(unicode.IsSpace), oneLineComment(), multiLineComment()))
+	return many1(any(satisfy(unicode.IsSpace), oneLineComment(), multiLineComment()))
 }
 
 func oneLineComment() parser {
@@ -222,8 +222,8 @@ func hex() parser {
 
 func number() parser {
 	return func(in Vessel) *Output {
-		out := any(collect(many1(digit()), static([]rune(".")), many1(digit())),
-			many1(digit()))(in)
+		out := lexeme(any(collect(many1(digit()), static([]rune(".")), many1(digit())),
+			many1(digit())))(in)
 		if out.matched {
 			m := string(out.match)
 			out.eval = func(context Context) Value {
@@ -245,7 +245,7 @@ func number() parser {
 
 func stringLiteral() parser {
 	return func(in Vessel) *Output {
-		out := between(static(QUOT), static(QUOT), many(any(escapeUnicode(), escapeSingle(), noneOf(QUOT))))(in)
+		out := lexeme(between(static(QUOT), static(QUOT), many(any(escapeUnicode(), escapeSingle(), noneOf(QUOT)))))(in)
 		if out.matched {
 			out.eval = func(context Context) Value {
 				return string(out.match)
