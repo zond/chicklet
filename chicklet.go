@@ -47,6 +47,12 @@ type Output struct {
 	content []rune
 	eval func(context Context) Value
 }
+func (self *Output) Eval(context Context) Value {
+	if self.eval == nil {
+		return nil
+	}
+	return self.eval(context)
+}
 func (self *Output) String() string {
 	return fmt.Sprint(self.matched, " content:", string(self.content), " match:", string(self.match), " children:", self.children)
 }
@@ -215,12 +221,37 @@ func hex() parser {
 }
 
 func number() parser {
-	return any(collect(many1(digit()), static([]rune(".")), many1(digit())),
-		many1(digit()))
+	return func(in Vessel) *Output {
+		out := any(collect(many1(digit()), static([]rune(".")), many1(digit())),
+			many1(digit()))(in)
+		if out.matched {
+			out.eval = func(context Context) Value {
+				if strings.Index(string(out.match), ".") != -1 {
+					buffer := bytes.NewBufferString(string(out.match))
+					var f float64
+					fmt.Fscanf(buffer, "%v", &f)
+					return f
+				}
+				buffer := bytes.NewBufferString(string(out.match))
+				var f int
+				fmt.Fscanf(buffer, "%v", &f)
+				return f
+			}
+		}
+		return out
+	}
 }
 
 func stringLiteral() parser {
-	return between(static(QUOT), static(QUOT), many(any(escapeUnicode(), escapeSingle(), noneOf(QUOT))))
+	return func(in Vessel) *Output {
+		out := between(static(QUOT), static(QUOT), many(any(escapeUnicode(), escapeSingle(), noneOf(QUOT))))(in)
+		if out.matched {
+			out.eval = func(context Context) Value {
+				return string(out.match)
+			}
+		}
+		return out
+	}
 }
 
 func oneOf(cs []rune) parser {
