@@ -17,6 +17,14 @@ type Vessel interface {
 	Push(int)
 }
 
+type Value interface{}
+
+type Context interface {
+	GetSub(string) Context
+	Get(string) Value
+	Set(string, Value) Value
+}
+
 var SLASH2 = []rune("//")
 var SLASHS = []rune("/*")
 var SSLASH = []rune("*/")
@@ -37,6 +45,7 @@ type output struct {
 	match []rune
 	children []*output
 	content []rune
+	eval func(context Context) interface{}
 }
 func (self *output) String() string {
 	return fmt.Sprint(self.matched, " content:", string(self.content), " match:", string(self.match), " children:", self.children)
@@ -57,9 +66,6 @@ func (self *output) concat(o *output) {
 	self.children = append(self.children, o)
 }
 
-func FALSE() *output {
-	return &output{false, nil, nil, nil}
-}
 func rary(r rune) []rune {
 	var ary []rune
 	return append(ary, r)
@@ -74,10 +80,10 @@ func satisfy(check func(c rune) bool) parser {
 		target, ok := in.Next()
 		if ok && check(target) {
 			in.Pop(1)
-			return &output{true, rary(target), nil, rary(target)}
+			return &output{matched: true, match: rary(target), content: rary(target)}
 		}
 
-		return FALSE()
+		return &output{}
 	}
 }
 
@@ -94,7 +100,7 @@ func escapeUnicode() parser {
 			out.match = rary(r)
 			return out
 		}		
-		return FALSE()
+		return &output{}
 	}
 }
 
@@ -115,18 +121,18 @@ func escapeSingle() parser {
 			}
 			return out
 		} 
-		return FALSE()
+		return &output{}
 	}
 }
 
 func count(p parser, c int) parser {
 	return func(in Vessel) *output {
-		out := &output{true, nil, nil, nil}
+		out := &output{matched: true}
 		for i := 0; i < c; i++ {
 			sub := p(in)
 			if !sub.matched {
 				in.Push(len(out.match))
-				return FALSE()
+				return &output{}
 			}
 			out.concat(sub)
 		}
@@ -134,7 +140,7 @@ func count(p parser, c int) parser {
 		if sub.matched {
 			out.concat(sub)
 			in.Push(len(out.match))
-			return FALSE()
+			return &output{}
 		}
 		return out
 	}
@@ -145,9 +151,9 @@ func replace(str []rune, replacement []rune) parser {
 	return func(in Vessel) *output {
 		out := static(str)(in)
 		if out.matched {
-			return &output{true, replacement, nil, replacement}
+			return &output{matched: true, match: replacement, content: replacement}
 		}
-		return FALSE()
+		return &output{}
 	}
 }
 
@@ -175,7 +181,7 @@ func inMulti() parser {
  */
 func until(cs []rune) parser {
 	return func(in Vessel) *output {
-		out := FALSE()
+		out := &output{}
 		for {
 			next, ok := in.Next()
 			if ok {
@@ -223,10 +229,10 @@ func oneOf(cs []rune) parser {
 		if ok {
 			if strings.IndexRune(string(cs), next) != -1 {
 				in.Pop(1)
-				return &output{true, rary(next), nil, rary(next)}
+				return &output{matched: true, match: rary(next), content: rary(next)}
 			}
 		}
-		return FALSE()
+		return &output{}
 	}
 }
 
@@ -236,10 +242,10 @@ func noneOf(cs []rune) parser {
 		if ok {
 			if strings.IndexRune(string(cs), next) == -1 {
 				in.Pop(1)
-				return &output{true, rary(next), nil, rary(next)}
+				return &output{matched: true, match: rary(next), content: rary(next)}
 			}
 		}
-		return FALSE()
+		return &output{}
 	}
 }
 
@@ -251,7 +257,7 @@ func lexeme(match parser) parser {
 // Match a parser 0 or more times.
 func many(match parser) parser {
 	return func(in Vessel) *output {
-		out := &output{true, nil, nil, nil}
+		out := &output{matched: true}
 		for {
 			sub := match(in)
 			if !sub.matched {
@@ -282,7 +288,7 @@ func many1(match parser) parser {
 
 func sepBy(delim parser, match parser) parser {
 	return func(in Vessel) *output {
-		out := FALSE()		
+		out := &output{}		
 		for {
 			sub := match(in)
 			if sub.matched {
@@ -313,7 +319,7 @@ func any(parsers... parser) parser {
 			}
 		}
 
-		return FALSE()
+		return &output{}
 	}
 }
 
@@ -324,7 +330,7 @@ func all(parsers... parser) parser {
 		for _, parser := range parsers {
 			out = parser(in)
 			if !out.matched {
-				return FALSE()
+				return &output{}
 			}
 		}
 		return out
@@ -335,13 +341,13 @@ func all(parsers... parser) parser {
 // If one parser fails, the whole thing fails.
 func collect(parsers... parser) parser {
 	return try(func(in Vessel) *output {
-		out := &output{true, nil, nil, nil}
+		out := &output{matched: true}
 		for _, parser := range parsers {
 			sub := parser(in)
 			if sub.matched {
 				out.concat(sub)
 			} else {
-				out = FALSE()
+				out = &output{}
 				break
 			}
 		}
@@ -374,7 +380,7 @@ func symbol(str []rune) parser {
 // Match a string and pop the string's length from the input.
 func static(str []rune) parser {
 	return func(in Vessel) *output {
-		out := &output{true, nil, nil, nil}
+		out := &output{matched: true}
 		for _, v := range str {
 			next, ok := in.Next()
 			if ok && next == v {
@@ -405,6 +411,29 @@ func try(match parser) parser {
 
 		return out
 	}
+}
+
+type MapContext struct {
+	data map[string]Value
+	subs map[string]Context
+}
+func NewMapContext() *MapContext {
+	return &MapContext{make(map[string]Value), make(map[string]Context)}
+}
+func (self *MapContext) GetSub(name string) Context {
+	if sub, ok := self.subs[name]; ok {
+		return sub
+	}
+	sub := NewMapContext()
+	self.subs[name] = sub
+	return sub
+}
+func (self *MapContext) Get(key string) Value {
+	return self.data[key]
+}
+func (self *MapContext) Set(key string, value Value) Value {
+	self.data[key] = value
+	return value
 }
 
 // Basic string Vessel for parsing over a string input.
