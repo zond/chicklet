@@ -91,7 +91,11 @@ func (a test) run(t *testing.T, name string) {
 		}
 
 		if !j.noval && !reflect.DeepEqual(val, j.val) {
-			t.Errorf("%s: Run %s = %T(%v) want %T(%v) [deep-equal=%v]", name, src, val, val, j.val, j.val, reflect.DeepEqual(val, j.val))
+			_, val_idealfloat := val.(*idealFloatV)
+			_, j_val_idealfloat := j.val.(*idealFloatV)
+			if !(val_idealfloat && j_val_idealfloat && val.String() == j.val.String()) {
+				t.Errorf("%s: Run %s = %T(%v) want %T(%v) [deep-equal=%v]", name, src, val, val, j.val, j.val, reflect.DeepEqual(val, j.val))
+			}
 		}
 	}
 }
