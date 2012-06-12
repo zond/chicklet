@@ -105,3 +105,11 @@ func TestStringLiteral(t *testing.T) {
 	parserTest(t, p, "\"\\U0002070E\"", true, "\U0002070E", "\"\\U0002070E\"", "\U0002070E")
 	parserTest(t, p, "\"\\a\\b\\f\\n\\r\\t\\v\\\\\\\"\\x42\\u4142\\U0002070Ehej\"", true, "\a\b\f\n\r\t\v\\\"B\u4142\U0002070Ehej", "\"\\a\\b\\f\\n\\r\\t\\v\\\\\\\"\\x42\\u4142\\U0002070Ehej\"", "\a\b\f\n\r\t\v\\\"B\u4142\U0002070Ehej")
 }
+
+func TestExpressions(t *testing.T) {
+	p := expression()
+	parserTest(t, p, "1 + 2;", true, "1+2", "1 + 2", 3)
+	parserTest(t, p, "1 - 2;", true, "1-2", "1 - 2", -1)
+	parserTest(t, p, "1 * 2;", true, "1*2", "1 * 2", 2)
+	parserTest(t, p, "4 / 2;", true, "4/2", "4 / 2", 2)
+}

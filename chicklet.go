@@ -70,6 +70,7 @@ func (self *Output) concat(o *Output) {
 	self.concatMatch(o)
 	self.concatContent(o)
 	self.children = append(self.children, o)
+	self.eval = o.eval
 }
 
 func rary(r rune) []rune {
@@ -220,6 +221,151 @@ func hex() parser {
 	return oneOf([]rune("0123456789abcdefABCDEF"))
 }
 
+func mul() parser {
+	return func(in Vessel) *Output {
+		out := lexeme(collect(number(), lexeme(static([]rune("*"))), number()))(in)
+		if out.matched {
+			out.eval = func(c Context) Value {
+				left := out.children[0].children[0].eval(c)
+				right := out.children[0].children[2].eval(c)
+				switch right.(type) {
+				case int: 
+					switch left.(type) {
+					case int: 
+						return left.(int) * right.(int)
+					case float64:
+						return left.(float64) * float64(right.(int))
+					case string: 
+						buffer := bytes.NewBufferString("")
+						for i := 0; i < right.(int); i++ {
+							fmt.Fprint(buffer, left.(string))
+						}
+						return string(buffer.Bytes())
+					}
+				case float64:
+					switch left.(type) {
+					case int: 
+						return float64(left.(int)) * right.(float64)
+					case float64:
+						return left.(float64) * right.(float64)
+					}
+				case string:
+					switch left.(type) {
+					case int: 
+						buffer := bytes.NewBufferString("")
+						for i := 0; i < left.(int); i++ {
+							fmt.Fprint(buffer, right.(string))
+						}
+						return string(buffer.Bytes())
+					}
+				}
+				return nil
+			}
+		}
+		return out
+	}
+}
+
+func div() parser {
+	return func(in Vessel) *Output {
+		out := lexeme(collect(number(), lexeme(static([]rune("/"))), number()))(in)
+		if out.matched {
+			out.eval = func(c Context) Value {
+				left := out.children[0].children[0].eval(c)
+				right := out.children[0].children[2].eval(c)
+				switch right.(type) {
+				case int: 
+					switch left.(type) {
+					case int: 
+						return left.(int) / right.(int)
+					case float64:
+						return left.(float64) / float64(right.(int))
+					}
+				case float64:
+					switch left.(type) {
+					case int: 
+						return float64(left.(int)) / right.(float64)
+					case float64:
+						return left.(float64) / right.(float64)
+					}
+				}
+				return nil
+			}
+		}
+		return out
+	}
+}
+
+func add() parser {
+	return func(in Vessel) *Output {
+		out := lexeme(collect(number(), lexeme(static([]rune("+"))), number()))(in)
+		if out.matched {
+			out.eval = func(c Context) Value {
+				left := out.children[0].children[0].eval(c)
+				right := out.children[0].children[2].eval(c)
+				switch right.(type) {
+				case int: 
+					switch left.(type) {
+					case int: 
+						return left.(int) + right.(int)
+					case float64:
+						return left.(float64) + float64(right.(int))
+					case string:
+						return fmt.Sprint(left, right)
+					}
+				case float64:
+					switch left.(type) {
+					case int: 
+						return float64(left.(int)) + right.(float64)
+					case float64:
+						return left.(float64) + right.(float64)
+					case string:
+						return fmt.Sprint(left, right)
+					}
+				case string:
+					return fmt.Sprint(left, right)
+				}
+				return nil
+			}
+		}
+		return out
+	}
+}
+
+func sub() parser {
+	return func(in Vessel) *Output {
+		out := lexeme(collect(number(), lexeme(static([]rune("-"))), number()))(in)
+		if out.matched {
+			out.eval = func(c Context) Value {
+				left := out.children[0].children[0].eval(c)
+				right := out.children[0].children[2].eval(c)
+				switch right.(type) {
+				case int: 
+					switch left.(type) {
+					case int: 
+						return left.(int) - right.(int)
+					case float64:
+						return left.(float64) - float64(right.(int))
+					}
+				case float64:
+					switch left.(type) {
+					case int: 
+						return float64(left.(int)) - right.(float64)
+					case float64:
+						return left.(float64) - right.(float64)
+					}
+				}
+				return nil
+			}
+		}
+		return out
+	}
+}
+
+func expression() parser {
+	return lexeme(any(mul(), div(), add(), sub(), number(), stringLiteral()))
+}
+
 func number() parser {
 	return func(in Vessel) *Output {
 		out := lexeme(any(collect(many1(digit()), static([]rune(".")), many1(digit())),
@@ -287,6 +433,7 @@ func lexeme(match parser) parser {
 		out := collect(match, many(whitespace()))(in)
 		if out.matched {
 			out.match = out.children[0].match
+			out.eval = out.children[0].eval
 		}
 		return out
 	}
@@ -361,8 +508,22 @@ func any(parsers... parser) parser {
 	}
 }
 
-// Match all parsers, returning the final result. If one fails, it stops.
-func all(parsers... parser) parser {
+func first(parsers... parser) parser {
+	return try(func(in Vessel) *Output {
+		var out *Output
+		for _, parser := range parsers {
+			sub := parser(in)
+			if sub.matched && out == nil {
+				out = sub
+			} else if !sub.matched {
+				return &Output{}
+			}
+		}
+		return out
+	})
+}
+
+func last(parsers... parser) parser {
 	return try(func(in Vessel) *Output {
 		var out *Output
 		for _, parser := range parsers {
