@@ -36,31 +36,31 @@ var UNI2 = []rune("x")
 var UNI4 = []rune("u")
 var UNI8 = []rune("U")
 
-type parser func(Vessel) *output
+type parser func(Vessel) *Output
 
 type input interface{}
 
-type output struct {
+type Output struct {
 	matched bool
 	match []rune
-	children []*output
+	children []*Output
 	content []rune
-	eval func(context Context) interface{}
+	eval func(context Context) Value
 }
-func (self *output) String() string {
+func (self *Output) String() string {
 	return fmt.Sprint(self.matched, " content:", string(self.content), " match:", string(self.match), " children:", self.children)
 }
-func (self *output) concatMatch(o *output) {
+func (self *Output) concatMatch(o *Output) {
 	for _, r := range o.match {
 		self.match = append(self.match, r)
 	}
 }
-func (self *output) concatContent(o *output) {
+func (self *Output) concatContent(o *Output) {
 	for _, r := range o.content {
 		self.content = append(self.content, r)
 	}
 }
-func (self *output) concat(o *output) {
+func (self *Output) concat(o *Output) {
 	self.concatMatch(o)
 	self.concatContent(o)
 	self.children = append(self.children, o)
@@ -76,19 +76,19 @@ type position struct {
 }
 
 func satisfy(check func(c rune) bool) parser {
-	return func(in Vessel) *output {
+	return func(in Vessel) *Output {
 		target, ok := in.Next()
 		if ok && check(target) {
 			in.Pop(1)
-			return &output{matched: true, match: rary(target), content: rary(target)}
+			return &Output{matched: true, match: rary(target), content: rary(target)}
 		}
 
-		return &output{}
+		return &Output{}
 	}
 }
 
 func escapeUnicode() parser {
-	return func(in Vessel) *output {
+	return func(in Vessel) *Output {
 		out := any(collect(static(BACKSLASH), static(UNI2), count(hex(), 2)),
 			collect(static(BACKSLASH), static(UNI4), count(hex(), 4)),
 			collect(static(BACKSLASH), static(UNI8), count(hex(), 8)))(in)
@@ -100,12 +100,12 @@ func escapeUnicode() parser {
 			out.match = rary(r)
 			return out
 		}		
-		return &output{}
+		return &Output{}
 	}
 }
 
 func escapeSingle() parser {
-	return func(in Vessel) *output {
+	return func(in Vessel) *Output {
 		out := collect(static(BACKSLASH), oneOf(LEGAL_ESCAPES))(in)
 		if out.matched {
 			switch string(out.children[1].match) {
@@ -121,18 +121,18 @@ func escapeSingle() parser {
 			}
 			return out
 		} 
-		return &output{}
+		return &Output{}
 	}
 }
 
 func count(p parser, c int) parser {
-	return func(in Vessel) *output {
-		out := &output{matched: true}
+	return func(in Vessel) *Output {
+		out := &Output{matched: true}
 		for i := 0; i < c; i++ {
 			sub := p(in)
 			if !sub.matched {
 				in.Push(len(out.match))
-				return &output{}
+				return &Output{}
 			}
 			out.concat(sub)
 		}
@@ -140,7 +140,7 @@ func count(p parser, c int) parser {
 		if sub.matched {
 			out.concat(sub)
 			in.Push(len(out.match))
-			return &output{}
+			return &Output{}
 		}
 		return out
 	}
@@ -148,12 +148,12 @@ func count(p parser, c int) parser {
 }
 
 func replace(str []rune, replacement []rune) parser {
-	return func(in Vessel) *output {
+	return func(in Vessel) *Output {
 		out := static(str)(in)
 		if out.matched {
-			return &output{matched: true, match: replacement, content: replacement}
+			return &Output{matched: true, match: replacement, content: replacement}
 		}
-		return &output{}
+		return &Output{}
 	}
 }
 
@@ -170,7 +170,7 @@ func multiLineComment() parser {
 }
 
 func inMulti() parser {
-	return func(in Vessel) *output {
+	return func(in Vessel) *Output {
 		return any(collect(until(SLASHS), multiLineComment(), inMulti()),
 			collect(until(SSLASH),static(SSLASH)))(in)
 	}
@@ -180,8 +180,8 @@ func inMulti() parser {
  * Will consume until cs is found. Will match if cs is found, not otherwise.
  */
 func until(cs []rune) parser {
-	return func(in Vessel) *output {
-		out := &output{}
+	return func(in Vessel) *Output {
+		out := &Output{}
 		for {
 			next, ok := in.Next()
 			if ok {
@@ -224,28 +224,28 @@ func stringLiteral() parser {
 }
 
 func oneOf(cs []rune) parser {
-	return func(in Vessel) *output {
+	return func(in Vessel) *Output {
 		next, ok := in.Next()
 		if ok {
 			if strings.IndexRune(string(cs), next) != -1 {
 				in.Pop(1)
-				return &output{matched: true, match: rary(next), content: rary(next)}
+				return &Output{matched: true, match: rary(next), content: rary(next)}
 			}
 		}
-		return &output{}
+		return &Output{}
 	}
 }
 
 func noneOf(cs []rune) parser {
-	return func(in Vessel) *output {
+	return func(in Vessel) *Output {
 		next, ok := in.Next()
 		if ok {
 			if strings.IndexRune(string(cs), next) == -1 {
 				in.Pop(1)
-				return &output{matched: true, match: rary(next), content: rary(next)}
+				return &Output{matched: true, match: rary(next), content: rary(next)}
 			}
 		}
-		return &output{}
+		return &Output{}
 	}
 }
 
@@ -256,8 +256,8 @@ func lexeme(match parser) parser {
 
 // Match a parser 0 or more times.
 func many(match parser) parser {
-	return func(in Vessel) *output {
-		out := &output{matched: true}
+	return func(in Vessel) *Output {
+		out := &Output{matched: true}
 		for {
 			sub := match(in)
 			if !sub.matched {
@@ -272,7 +272,7 @@ func many(match parser) parser {
 }
 
 func many1(match parser) parser {
-	return func(in Vessel) *output {
+	return func(in Vessel) *Output {
 		out := match(in)
 		if !out.matched {
 			return out
@@ -287,8 +287,8 @@ func many1(match parser) parser {
 }
 
 func sepBy(delim parser, match parser) parser {
-	return func(in Vessel) *output {
-		out := &output{}		
+	return func(in Vessel) *Output {
+		out := &Output{}		
 		for {
 			sub := match(in)
 			if sub.matched {
@@ -311,7 +311,7 @@ func sepBy(delim parser, match parser) parser {
 
 // Go through the parsers until one matches.
 func any(parsers... parser) parser {
-	return func(in Vessel) *output {
+	return func(in Vessel) *Output {
 		for _, parser := range parsers {
 			sub := parser(in)
 			if sub.matched {
@@ -319,35 +319,35 @@ func any(parsers... parser) parser {
 			}
 		}
 
-		return &output{}
+		return &Output{}
 	}
 }
 
 // Match all parsers, returning the final result. If one fails, it stops.
 func all(parsers... parser) parser {
-	return try(func(in Vessel) *output {
-		var out *output
+	return try(func(in Vessel) *Output {
+		var out *Output
 		for _, parser := range parsers {
 			out = parser(in)
 			if !out.matched {
-				return &output{}
+				return &Output{}
 			}
 		}
 		return out
 	})
 }
 
-// Match all parsers, collecting their outputs
+// Match all parsers, collecting their Outputs
 // If one parser fails, the whole thing fails.
 func collect(parsers... parser) parser {
-	return try(func(in Vessel) *output {
-		out := &output{matched: true}
+	return try(func(in Vessel) *Output {
+		out := &Output{matched: true}
 		for _, parser := range parsers {
 			sub := parser(in)
 			if sub.matched {
 				out.concat(sub)
 			} else {
-				out = &output{}
+				out = &Output{}
 				break
 			}
 		}
@@ -358,7 +358,7 @@ func collect(parsers... parser) parser {
 
 // Try matching begin, match, and then end.
 func between(begin parser, end parser, match parser) parser {
-	return try(func(in Vessel) *output {
+	return try(func(in Vessel) *Output {
 		out := collect(begin, match, end)(in)
 		if out.matched {
 			out.match = out.children[1].match
@@ -379,8 +379,8 @@ func symbol(str []rune) parser {
 
 // Match a string and pop the string's length from the input.
 func static(str []rune) parser {
-	return func(in Vessel) *output {
-		out := &output{matched: true}
+	return func(in Vessel) *Output {
+		out := &Output{matched: true}
 		for _, v := range str {
 			next, ok := in.Next()
 			if ok && next == v {
@@ -401,7 +401,7 @@ func static(str []rune) parser {
 
 // Try a parse and revert the state and position if it fails.
 func try(match parser) parser {
-	return func(in Vessel) *output {
+	return func(in Vessel) *Output {
 		pos := in.GetPosition()
 		out := match(in)
 		if !out.matched {
