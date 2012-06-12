@@ -225,14 +225,15 @@ func number() parser {
 		out := any(collect(many1(digit()), static([]rune(".")), many1(digit())),
 			many1(digit()))(in)
 		if out.matched {
+			m := string(out.match)
 			out.eval = func(context Context) Value {
-				if strings.Index(string(out.match), ".") != -1 {
-					buffer := bytes.NewBufferString(string(out.match))
+				if strings.Index(m, ".") != -1 {
+					buffer := bytes.NewBufferString(m)
 					var f float64
 					fmt.Fscanf(buffer, "%v", &f)
 					return f
 				}
-				buffer := bytes.NewBufferString(string(out.match))
+				buffer := bytes.NewBufferString(m)
 				var f int
 				fmt.Fscanf(buffer, "%v", &f)
 				return f
@@ -282,7 +283,13 @@ func noneOf(cs []rune) parser {
 
 // Match a parser and skip whitespace
 func lexeme(match parser) parser {
-	return collect(match, many(whitespace()))
+	return func(in Vessel) *Output {
+		out := collect(match, many(whitespace()))(in)
+		if out.matched {
+			out.match = out.children[0].match
+		}
+		return out
+	}
 }
 
 // Match a parser 0 or more times.
