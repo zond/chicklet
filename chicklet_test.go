@@ -8,21 +8,6 @@ import (
 	"fmt"
 )
 
-func evalTest(t *testing.T, c *Context, s string, exp Thing) {
-	val := c.Eval(s)
-	if len(val) != 1 {
-		t.Error(s, "should generate one value, generated", len(val))
-	}
-	if exp != val[0] && !reflect.DeepEqual(exp, val[0]) {
-		t.Error(s, "should generate", exp, "but generated", val[0])
-	}
-}
-
-func evalTestReturn(t *testing.T, s string, exp Thing) {
-	c := NewContext()
-	evalTest(t, c, s, exp)
-}
-
 func TestIntReturn(t *testing.T) {
 	evalTestReturn(t, "func() int { return 1 + 2 }()", 3)
 }
@@ -37,12 +22,6 @@ func TestIdealFloatReturn(t *testing.T) {
 
 func TestBoolReturn(t *testing.T) {
 	evalTestReturn(t, "1 == 1", true)
-}
-
-func defineTest(t *testing.T, value Thing) {
- 	c := NewContext()
-	c.Define("testDef", value)
-	evalTest(t, c, "testDef", value)
 }
 
 func TestDefineString(t *testing.T) {
@@ -124,6 +103,12 @@ func TestEvalFuncEval(t *testing.T) {
 	}
 }
 
+func defineTest(t *testing.T, value Thing) {
+ 	c := NewContext()
+	c.Define("testDef", value)
+	evalTest(t, c, "testDef", value)
+}
+
 func evalFuncCallTest(t *testing.T, decl string, args, expect []Thing) {
 	c := NewContext()
 	result := c.Eval(decl)
@@ -141,3 +126,19 @@ func evalFuncCallTest(t *testing.T, decl string, args, expect []Thing) {
 		t.Error(decl, "should be callable with", args, ", got", err)
 	}
 }
+
+func evalTest(t *testing.T, c *Context, s string, exp Thing) {
+	val := c.Eval(s)
+	if len(val) != 1 {
+		t.Error(s, "should generate one value, generated", len(val))
+	}
+	if exp != val[0] && !reflect.DeepEqual(exp, val[0]) {
+		t.Error(s, "should generate", exp, "but generated", val[0])
+	}
+}
+
+func evalTestReturn(t *testing.T, s string, exp Thing) {
+	c := NewContext()
+	evalTest(t, c, s, exp)
+}
+
