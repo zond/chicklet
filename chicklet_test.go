@@ -7,8 +7,7 @@ import (
 	"reflect"
 )
 
-func evalTest(t *testing.T, s string, exp Thing) {
-	c := NewContext()
+func evalTest(t *testing.T, c *Context, s string, exp Thing) {
 	code, err := c.Compile(s)
 	if err == nil {
 		val, err := code.Call()
@@ -27,43 +26,31 @@ func evalTest(t *testing.T, s string, exp Thing) {
 	}
 }
 
+func evalTestReturn(t *testing.T, s string, exp Thing) {
+	c := NewContext()
+	evalTest(t, c, s, exp)
+}
+
 func TestIntReturn(t *testing.T) {
-	evalTest(t, "func() int { return 1 + 2 }()", 3)
+	evalTestReturn(t, "func() int { return 1 + 2 }()", 3)
 }
 
 func TestStringReturn(t *testing.T) {
-	evalTest(t, "\"bla\"", "bla")
+	evalTestReturn(t, "\"bla\"", "bla")
 }
 
 func TestIdealFloatReturn(t *testing.T) {
-	evalTest(t, "1.0 * 4.1", big.NewRat(41, 10))
+	evalTestReturn(t, "1.0 * 4.1", big.NewRat(41, 10))
 }
 
 func TestBoolReturn(t *testing.T) {
-	evalTest(t, "1 == 1", true)
+	evalTestReturn(t, "1 == 1", true)
 }
 
 func defineTest(t *testing.T, value Thing) {
  	c := NewContext()
 	c.Define("testDef", value)
-	s := "testDef"
-	code, err := c.Compile("testDef")
-	if err == nil {
-		val, err := code.Call()
-		if err == nil {
-			if len(val) != 1 {
-				t.Error(s, "should generate one value, generated", len(val))
-			}
-			if value != val[0] && !reflect.DeepEqual(value, val[0]) {
-				t.Error(s, "should generate", value, "but generated", val[0])
-			}
-		} else {
-			t.Error(s, "should run, got", err)
-		}
-	} else {
-		t.Error(s, "should compile, got", err)
-	}
-	
+	evalTest(t, c, "testDef", value)
 }
 
 func TestDefineString(t *testing.T) {
