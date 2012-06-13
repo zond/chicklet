@@ -106,12 +106,21 @@ func TestEvalFunc0_2Return(t *testing.T) {
 
 func TestEvalFuncEval(t *testing.T) {
 	c := NewContext()
-	s := "func testFunc() int { return 11 }"
+	c.Eval("func testFunc() int { return 11 }")
+	s := "testFunc()"
 	result := c.Eval(s)
-	s = "testFunc()"
-	result = c.Eval(s)
 	if result[0] != 11 {
 		t.Error(s, "should return 11 when called, returned", result[0])
+	}
+	s = "func() int { return testFunc() }"
+	result = c.Eval(s)
+	rval, err := result[0].(Callable).Call()
+	if err == nil {
+		if rval[0] != 11 {
+			t.Error(s, "should return 11 when called, returned", result[0])
+		}
+	} else {
+		t.Error(s, "should be callable, got", err)
 	}
 }
 
