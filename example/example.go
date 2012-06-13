@@ -11,7 +11,7 @@ func nativeTest(i int, s string) int {
 }
 
 func main() {
-	context := chicklet.NewContext()
+	context := chicklet.NewWorld()
 	context.Define("myNative", nativeTest)
 	context.Eval("func callNative(s string, i int) int { return myNative(i, s) }")
 	evalFunc := context.Eval("func(s string, i int) (int, string) { return callNative(s, i), s }")[0].(chicklet.Callable)
