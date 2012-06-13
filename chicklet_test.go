@@ -9,17 +9,12 @@ import (
 )
 
 func evalTest(t *testing.T, c *Context, s string, exp Thing) {
-	code := compile(t, c, s)
-	val, err := code.Call()
-	if err == nil {
-		if len(val) != 1 {
-			t.Error(s, "should generate one value, generated", len(val))
-		}
-		if exp != val[0] && !reflect.DeepEqual(exp, val[0]) {
-			t.Error(s, "should generate", exp, "but generated", val[0])
-		}
-	} else {
-		t.Error(s, "should run, got", err)
+	val := c.Eval(s)
+	if len(val) != 1 {
+		t.Error(s, "should generate one value, generated", len(val))
+	}
+	if exp != val[0] && !reflect.DeepEqual(exp, val[0]) {
+		t.Error(s, "should generate", exp, "but generated", val[0])
 	}
 }
 
@@ -109,54 +104,31 @@ func TestEvalFunc0_2Return(t *testing.T) {
 	evalFuncCallTest(t, "func() (a,b int) { return 1, 2 }", []Thing{}, []Thing{1,2})
 }
 
-func compile(t *testing.T, c *Context, s string) Callable {
-	rval, err := c.Compile(s)
-	if err != nil {
-		panic(fmt.Sprint(s, "should compile, got", err))
-	}
-	return rval
-}
-
 func TestEvalFuncEval(t *testing.T) {
 	c := NewContext()
 	s := "func testFunc() int { return 11 }"
-	code := compile(t, c, s)
-	result, err := code.Call()
-	if err == nil {
-		s = "testFunc()"
-		code = compile(t, c, s)
-		result, err = code.Call()
-		if err == nil {
-			if result[0] != 11 {
-				t.Error(s, "should return 11 when called, returned", result[0])
-			}
-		} else {
-			t.Error(s, "should be callable, got", err)
-		}
-	} else {
-		t.Error(s, "should be callable, got", err)
+	result := c.Eval(s)
+	s = "testFunc()"
+	result = c.Eval(s)
+	if result[0] != 11 {
+		t.Error(s, "should return 11 when called, returned", result[0])
 	}
 }
 
 func evalFuncCallTest(t *testing.T, decl string, args, expect []Thing) {
 	c := NewContext()
-	code := compile(t, c, decl)
-	result, err := code.Call()
+	result := c.Eval(decl)
+	rval, err := result[0].(Callable).Call(args...)
 	if err == nil {
-		rval, err := result[0].(Callable).Call(args...)
-		if err == nil {
-			if len(rval) != len(expect) {
-				t.Error(decl, "should return", len(expect), "values when called with", args, ", returned", len(rval))
+		if len(rval) != len(expect) {
+			t.Error(decl, "should return", len(expect), "values when called with", args, ", returned", len(rval))
+		}
+		for index, val := range rval {
+			if val != expect[index] {
+				t.Error(decl, "should return", expect, "when called with", args, "returned, ", rval)
 			}
-			for index, val := range rval {
-				if val != expect[index] {
-					t.Error(decl, "should return", expect, "when called with", args, "returned, ", rval)
-				}
-			}
-		} else {
-			t.Error(decl, "should be callable with", args, ", got", err)
 		}
 	} else {
-		t.Error(decl, "should be callable, got", err)
+		t.Error(decl, "should be callable with", args, ", got", err)
 	}
 }

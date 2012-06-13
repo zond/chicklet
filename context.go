@@ -35,6 +35,17 @@ func (self *Context) Define(name string, thing Thing) {
 	v := val.(Value)
 	self.world.DefineVar(name, TypeFromNative(reflect.TypeOf(thing)), v)
 }
+func (self *Context) Eval(s string) []Thing {
+	code, err := self.Compile(s)
+	if err != nil {
+		panic(err)
+	}
+	result, err := code.Call()
+	if err != nil {
+		panic(err)
+	}
+	return result
+}
 
 type Compiled struct {
 	code Code
