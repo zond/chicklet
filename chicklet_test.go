@@ -35,14 +35,18 @@ func TestDefineInt(t *testing.T) {
 func TestDefineFloat(t *testing.T) {
 	defineTest(t, 0.12)
 }
-
+/*
+func TestDefineStruct(t *testing.T) {
+	defineTest(t, &testStruct{1, "hello"})
+}
+*/
 func TestDefineBool(t *testing.T) {
 	defineTest(t, false)
 	defineTest(t, true)
 }
 
 func nativeFuncCallTest(t *testing.T, some Thing, params string, exp Thing) {
-	c := NewContext()
+	c := NewWorld()
 	c.Define("testFun", some)
 	evalTest(t, c, fmt.Sprint("testFun(", params, ")"), exp)
 }
@@ -84,7 +88,7 @@ func TestEvalFunc0_2Return(t *testing.T) {
 }
 
 func TestEvalFuncEval(t *testing.T) {
-	c := NewContext()
+	c := NewWorld()
 	c.Eval("func testFunc() int { return 11 }")
 	s := "testFunc()"
 	result := c.Eval(s)
@@ -104,13 +108,13 @@ func TestEvalFuncEval(t *testing.T) {
 }
 
 func defineTest(t *testing.T, value Thing) {
- 	c := NewContext()
+ 	c := NewWorld()
 	c.Define("testDef", value)
 	evalTest(t, c, "testDef", value)
 }
 
 func evalFuncCallTest(t *testing.T, decl string, args, expect []Thing) {
-	c := NewContext()
+	c := NewWorld()
 	result := c.Eval(decl)
 	rval, err := result[0].(Callable).Call(args...)
 	if err == nil {
@@ -127,7 +131,7 @@ func evalFuncCallTest(t *testing.T, decl string, args, expect []Thing) {
 	}
 }
 
-func evalTest(t *testing.T, c *Context, s string, exp Thing) {
+func evalTest(t *testing.T, c *World, s string, exp Thing) {
 	val := c.Eval(s)
 	if len(val) != 1 {
 		t.Error(s, "should generate one value, generated", len(val))
@@ -138,7 +142,17 @@ func evalTest(t *testing.T, c *Context, s string, exp Thing) {
 }
 
 func evalTestReturn(t *testing.T, s string, exp Thing) {
-	c := NewContext()
+	c := NewWorld()
 	evalTest(t, c, s, exp)
 }
 
+type testStruct struct {
+	i int
+	s string
+}
+
+type testStruct2 struct {
+	i int
+	f float64
+	s *testStruct
+}
