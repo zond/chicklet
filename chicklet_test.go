@@ -2,7 +2,6 @@
 package chicklet
 
 import (
-//	"fmt"
 	"testing"
 	"math/big"
 )
@@ -52,6 +51,25 @@ func TestIdealFloatReturn(t *testing.T) {
 		if err == nil {
 			cmp := big.NewRat(41, 10)
 			if cmp.Cmp(val[0].(*big.Rat)) != 0 {
+				t.Error(s, "should generate", cmp, "but generated", val[0])
+			}
+		} else {
+			t.Error(s, "should run, got", err)
+		}
+	} else {
+		t.Error(s, "should compile, got", err)
+	}
+}
+
+func TestBoolReturn(t *testing.T) {
+	c := NewContext()
+	s := "1 == 1"
+	code, err := c.Compile(s)
+	if err == nil {
+		val, err := code.Call()
+		if err == nil {
+			cmp := true
+			if val[0].(bool) != cmp {
 				t.Error(s, "should generate", cmp, "but generated", val[0])
 			}
 		} else {

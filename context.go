@@ -67,6 +67,7 @@ func convertOne(t Thing) (rval Thing, err error) {
 	case *intV: return int(*(t.(*intV))), nil
 	case *stringV: return string(*(t.(*stringV))), nil
 	case *idealFloatV: return (*(t.(*idealFloatV))).Get(), nil
+	case *boolV: return bool(*(t.(*boolV))), nil
 	}
 	return nil, &ConvertError{fmt.Sprintf("Unable to convert %v of type %T", t, t)}
 }
