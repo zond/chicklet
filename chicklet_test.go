@@ -7,7 +7,7 @@ import (
 	"reflect"
 )
 
-func evalTestF(t *testing.T, s string, exp Thing, tf func(Thing) bool) {
+func evalTest(t *testing.T, s string, exp Thing) {
 	c := NewContext()
 	code, err := c.Compile(s)
 	if err == nil {
@@ -16,7 +16,7 @@ func evalTestF(t *testing.T, s string, exp Thing, tf func(Thing) bool) {
 			if len(val) != 1 {
 				t.Error(s, "should generate one value, generated", len(val))
 			}
-			if !tf(val[0]) {
+			if exp != val[0] && !reflect.DeepEqual(exp, val[0]) {
 				t.Error(s, "should generate", exp, "but generated", val[0])
 			}
 		} else {
@@ -25,10 +25,6 @@ func evalTestF(t *testing.T, s string, exp Thing, tf func(Thing) bool) {
 	} else {
 		t.Error(s, "should compile, got", err)
 	}
-}
-
-func evalTest(t *testing.T, s string, exp Thing) {
-	evalTestF(t, s, exp, func(r Thing) bool { return exp == r || reflect.DeepEqual(exp, r) })
 }
 
 func TestIntReturn(t *testing.T) {
@@ -47,27 +43,62 @@ func TestBoolReturn(t *testing.T) {
 	evalTest(t, "1 == 1", true)
 }
 
-func TestFunc0_0Return(t *testing.T) {
-	testFuncCall(t, "func() {}", []Thing{}, []Thing{})
+func defineTest(t *testing.T, value Thing) {
+ 	c := NewContext()
+	c.Define("testDef", value)
+	s := "testDef"
+	code, err := c.Compile("testDef")
+	if err == nil {
+		val, err := code.Call()
+		if err == nil {
+			if len(val) != 1 {
+				t.Error(s, "should generate one value, generated", len(val))
+			}
+			if value != val[0] && !reflect.DeepEqual(value, val[0]) {
+				t.Error(s, "should generate", value, "but generated", val[0])
+			}
+		} else {
+			t.Error(s, "should run, got", err)
+		}
+	} else {
+		t.Error(s, "should compile, got", err)
+	}
+	
 }
 
-func TestFunc2_1Return(t *testing.T) {
-	testFuncCall(t, "func(i, j int) int { return i * j }", []Thing{2,5}, []Thing{10})
+func TestDefineString(t *testing.T) {
+	defineTest(t, "str")
 }
 
-func TestFunc1_1Return(t *testing.T) {
-	testFuncCall(t, "func(i int) int { return i * 2 }", []Thing{2}, []Thing{4})
+func TestDefineInt(t *testing.T) {
+	defineTest(t, 14)
 }
 
-func TestFunc0_1Return(t *testing.T) {
-	testFuncCall(t, "func() int { return 1 }", []Thing{}, []Thing{1})
+func TestDefineFloat(t *testing.T) {
+	defineTest(t, 0.12)
 }
 
-func TestFunc0_2Return(t *testing.T) {
-	testFuncCall(t, "func() (a,b int) { return 1, 2 }", []Thing{}, []Thing{1,2})
+func TestEvalFunc0_0Return(t *testing.T) {
+	evalFuncCallTest(t, "func() {}", []Thing{}, []Thing{})
 }
 
-func testFuncCall(t *testing.T, decl string, args, expect []Thing) {
+func TestEvalFunc2_1Return(t *testing.T) {
+	evalFuncCallTest(t, "func(i, j int) int { return i * j }", []Thing{2,5}, []Thing{10})
+}
+
+func TestEvalFunc1_1Return(t *testing.T) {
+	evalFuncCallTest(t, "func(i int) int { return i * 2 }", []Thing{2}, []Thing{4})
+}
+
+func TestEvalFunc0_1Return(t *testing.T) {
+	evalFuncCallTest(t, "func() int { return 1 }", []Thing{}, []Thing{1})
+}
+
+func TestEvalFunc0_2Return(t *testing.T) {
+	evalFuncCallTest(t, "func() (a,b int) { return 1, 2 }", []Thing{}, []Thing{1,2})
+}
+
+func evalFuncCallTest(t *testing.T, decl string, args, expect []Thing) {
 	c := NewContext()
 	code, err := c.Compile(decl)
 	if err == nil {

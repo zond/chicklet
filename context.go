@@ -4,6 +4,7 @@ package chicklet
 import (
 	"go/token"
 	"fmt"
+	"reflect"
 )
 
 type Thing interface{}
@@ -25,6 +26,14 @@ func (self *Context) Compile(s string) (Callable, error) {
 		return &Compiled{code}, nil
 	}
 	return nil, err
+}
+func (self *Context) Define(name string, thing Thing) {
+	val, err := convertOne(thing)
+	if err != nil {
+		panic(fmt.Sprint("Unable to define ", name, " to ", thing, ": ", err))
+	}
+	v := val.(Value)
+	self.world.DefineVar(name, TypeFromNative(reflect.TypeOf(thing)), v)
 }
 
 type Compiled struct {
@@ -123,6 +132,7 @@ func convertOne(t Thing) (rval Thing, err error) {
 	case *stringV: return string(*(t.(*stringV))), nil
 	case *idealFloatV: return (*(t.(*idealFloatV))).Get(), nil
 	case *boolV: return bool(*(t.(*boolV))), nil
+	case *float64V: return float64(*(t.(*float64V))), nil
 	case *funcV: 
 		switch t.(*funcV).target.(type) {
 		case *evalFunc: return &EvalFuncWrapper{t.(*funcV).target.(*evalFunc)}, nil
