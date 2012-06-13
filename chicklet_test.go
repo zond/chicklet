@@ -131,10 +131,42 @@ func TestFunc0_1Return(t *testing.T) {
 			rval, err := val[0].(Callable).Call()
 			if err == nil {
 				if len(rval) != 1 {
-					t.Error(s, "should not return one value when called, returned", len(rval))
+					t.Error(s, "should return one value when called, returned", len(rval))
 				}
 				if rval[0].(int) != 1 {
 					t.Error(s, "should return 1 when called, returned", rval[0])
+				}
+			} else {
+				t.Error(s, "should be callable, got", err)
+			}
+		} else {
+			t.Error(s, "should run, got", err)
+		}
+	} else {
+		t.Error(s, "should compile, got", err)
+	}
+}
+
+func TestFunc0_2Return(t *testing.T) {
+	c := NewContext()
+	s := "func() (a,b int) { return 1, 2 }"
+	code, err := c.Compile(s)
+	if err == nil {
+		val, err := code.Call()
+		if err == nil {
+			if len(val) != 1 {
+				t.Error(s, "should generate one value, generated", len(val))
+			}
+			rval, err := val[0].(Callable).Call()
+			if err == nil {
+				if len(rval) != 2 {
+					t.Error(s, "should return two values when called, returned", len(rval))
+				}
+				if rval[0].(int) != 1 {
+					t.Error(s, "should return 1 when called, returned", rval[0])
+				}
+				if rval[1].(int) != 2 {
+					t.Error(s, "should return 2 when called, returned", rval[1])
 				}
 			} else {
 				t.Error(s, "should be callable, got", err)
