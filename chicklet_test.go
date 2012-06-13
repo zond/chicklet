@@ -4,9 +4,10 @@ package chicklet
 import (
 	"testing"
 	"math/big"
+	"reflect"
 )
 
-func evalTest(t *testing.T, s string, exp Thing) {
+func evalTestF(t *testing.T, s string, exp Thing, tf func(Thing) bool) {
 	c := NewContext()
 	code, err := c.Compile(s)
 	if err == nil {
@@ -15,7 +16,7 @@ func evalTest(t *testing.T, s string, exp Thing) {
 			if len(val) != 1 {
 				t.Error(s, "should generate one value, generated", len(val))
 			}
-			if val[0] != exp {
+			if !tf(val[0]) {
 				t.Error(s, "should generate", exp, "but generated", val[0])
 			}
 		} else {
@@ -26,73 +27,24 @@ func evalTest(t *testing.T, s string, exp Thing) {
 	}
 }
 
+func evalTest(t *testing.T, s string, exp Thing) {
+	evalTestF(t, s, exp, func(r Thing) bool { return exp == r || reflect.DeepEqual(exp, r) })
+}
+
 func TestIntReturn(t *testing.T) {
 	evalTest(t, "func() int { return 1 + 2 }()", 3)
 }
 
 func TestStringReturn(t *testing.T) {
-	c := NewContext()
-	s := "\"bla\""
-	code, err := c.Compile(s)
-	if err == nil {
-		val, err := code.Call()
-		if err == nil {
-			if len(val) != 1 {
-				t.Error(s, "should generate one value, generated", len(val))
-			}
-			if val[0].(string) != "bla" {
-				t.Error(s, "should generate \"bla\" but generated", val[0])
-			}
-		} else {
-			t.Error(s, "should run, got", err)
-		}
-	} else {
-		t.Error(s, "should compile, got", err)
-	}
+	evalTest(t, "\"bla\"", "bla")
 }
 
 func TestIdealFloatReturn(t *testing.T) {
-	c := NewContext()
-	s := "1.0 * 4.1"
-	code, err := c.Compile(s)
-	if err == nil {
-		val, err := code.Call()
-		if err == nil {
-			if len(val) != 1 {
-				t.Error(s, "should generate one value, generated", len(val))
-			}
-			cmp := big.NewRat(41, 10)
-			if cmp.Cmp(val[0].(*big.Rat)) != 0 {
-				t.Error(s, "should generate", cmp, "but generated", val[0])
-			}
-		} else {
-			t.Error(s, "should run, got", err)
-		}
-	} else {
-		t.Error(s, "should compile, got", err)
-	}
+	evalTest(t, "1.0 * 4.1", big.NewRat(41, 10))
 }
 
 func TestBoolReturn(t *testing.T) {
-	c := NewContext()
-	s := "1 == 1"
-	code, err := c.Compile(s)
-	if err == nil {
-		val, err := code.Call()
-		if err == nil {
-			if len(val) != 1 {
-				t.Error(s, "should generate one value, generated", len(val))
-			}
-			cmp := true
-			if val[0].(bool) != cmp {
-				t.Error(s, "should generate", cmp, "but generated", val[0])
-			}
-		} else {
-			t.Error(s, "should run, got", err)
-		}
-	} else {
-		t.Error(s, "should compile, got", err)
-	}
+	evalTest(t, "1 == 1", true)
 }
 
 func TestFunc0_0Return(t *testing.T) {
