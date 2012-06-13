@@ -78,6 +78,11 @@ func TestDefineFloat(t *testing.T) {
 	defineTest(t, 0.12)
 }
 
+func TestDefineBool(t *testing.T) {
+	defineTest(t, false)
+	defineTest(t, true)
+}
+
 func TestEvalFunc0_0Return(t *testing.T) {
 	evalFuncCallTest(t, "func() {}", []Thing{}, []Thing{})
 }
