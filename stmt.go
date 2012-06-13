@@ -1317,7 +1317,7 @@ func (a *compiler) compileFunc(b *block, decl *FuncDecl, body *ast.BlockStmt) fu
 
 	code := fc.get()
 	maxVars := bodyScope.maxVars
-	return func(t *Thread) Func { return &evalFunc{t.f, maxVars, code} }
+	return func(t *Thread) Func { return &evalFunc{t.f, maxVars, decl.Type.In, decl.Type.Out, code} }
 }
 
 // Checks that labels were resolved and that all jumps obey scoping

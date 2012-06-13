@@ -60,6 +60,8 @@ func (b *codeBuf) get() code {
 type evalFunc struct {
 	outer     *Frame
 	frameSize int
+	inTypes   []Type
+        outTypes  []Type
 	code      code
 }
 
