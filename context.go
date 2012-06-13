@@ -103,6 +103,10 @@ func convert(things... Thing) (rval []Thing, err error) {
 
 func convertOne(t Thing) (rval Thing, err error) {
 	switch t.(type) {
+	case int: 
+		val := IntType.Zero()
+		*(val.(*intV)) = intV(t.(int))
+		return val, nil
 	case *intV: return int(*(t.(*intV))), nil
 	case *stringV: return string(*(t.(*stringV))), nil
 	case *idealFloatV: return (*(t.(*idealFloatV))).Get(), nil
