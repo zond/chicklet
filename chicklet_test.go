@@ -5,6 +5,7 @@ import (
 	"testing"
 	"math/big"
 	"reflect"
+	"fmt"
 )
 
 func evalTest(t *testing.T, c *Context, s string, exp Thing) {
@@ -68,6 +69,28 @@ func TestDefineFloat(t *testing.T) {
 func TestDefineBool(t *testing.T) {
 	defineTest(t, false)
 	defineTest(t, true)
+}
+
+func nativeFuncCallTest(t *testing.T, some Thing, params string, exp Thing) {
+	c := NewContext()
+	c.Define("testFun", some)
+	evalTest(t, c, fmt.Sprint("testFun(", params, ")"), exp)
+}
+
+func TestDefineFunc0_0(t *testing.T) {
+	nativeFuncCallTest(t, func() {}, "", nil)
+}
+
+func TestDefineFunc0_1(t *testing.T) {
+	nativeFuncCallTest(t, func() int { return 1 }, "", 1)
+}
+
+func TestDefineFunc1_1(t *testing.T) {
+	nativeFuncCallTest(t, func(i int) int { return i - 1 }, "3", 2)
+}
+
+func TestDefineFunc2_1(t *testing.T) {
+	nativeFuncCallTest(t, func(i int, f float64) float64 { return float64(i) + f }, "3, 0.4", 3.4)
 }
 
 func TestEvalFunc0_0Return(t *testing.T) {

@@ -137,6 +137,29 @@ func convertOne(t Thing) (rval Thing, err error) {
 		switch t.(*funcV).target.(type) {
 		case *evalFunc: return &EvalFuncWrapper{t.(*funcV).target.(*evalFunc)}, nil
 		}
+	case nil: return nil, nil
+	}
+	val := reflect.ValueOf(t)
+	if val.Kind() == reflect.Func {
+		_, fval := FuncFromNativeTyped(func(thread *Thread, in, out []Value) {
+			var reflect_in []reflect.Value
+			for _, inv := range in {
+				converted, err := convertOne(inv)
+				if err != nil {
+					panic(fmt.Sprint("Unable to call ", t, "(", in, "): ", err))
+				}
+				reflect_in = append(reflect_in, reflect.ValueOf(converted))
+			}
+			reflect_out := val.Call(reflect_in)
+			for index, outv := range reflect_out {
+				converted, err := convertOne(outv.Interface())
+				if err != nil {
+					panic(fmt.Sprint("Unable to respond from call to ", t, "(", in, ") with ", reflect_out, ": ", err))
+				}
+				out[index] = converted.(Value)
+			}
+		}, t)
+		return fval, nil
 	}
 	return nil, &ConvertError{fmt.Sprintf("Unable to convert %v of type %T", t, t)}
 }
