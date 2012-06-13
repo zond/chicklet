@@ -62,7 +62,7 @@ type EvalFuncWrapper struct {
 }
 func (self *EvalFuncWrapper) Call(things... Thing) (rval []Thing, err error) {
 	if len(things) != len(self.target.inTypes) {
-		return nil, &CallError{fmt.Sprint("Wrong number of arguments. Wanted", len(self.target.inTypes), "but got", len(things))}
+		return nil, &CallError{fmt.Sprint("Wrong number of arguments. Wanted ", len(self.target.inTypes), " but got ", len(things))}
 	}
 	frame := self.target.NewFrame()
 	for index, thing := range things {
@@ -106,6 +106,18 @@ func convertOne(t Thing) (rval Thing, err error) {
 	case int: 
 		val := IntType.Zero()
 		*(val.(*intV)) = intV(t.(int))
+		return val, nil
+	case string: 
+		val := StringType.Zero()
+		*(val.(*stringV)) = stringV(t.(string))
+		return val, nil
+	case float64: 
+		val := Float64Type.Zero()
+		*(val.(*float64V)) = float64V(t.(float64))
+		return val, nil
+	case bool: 
+		val := BoolType.Zero()
+		*(val.(*boolV)) = boolV(t.(bool))
 		return val, nil
 	case *intV: return int(*(t.(*intV))), nil
 	case *stringV: return string(*(t.(*stringV))), nil
