@@ -14,7 +14,7 @@ func main() {
 	context := chicklet.NewContext()
 	context.Define("myNative", nativeTest)
 	context.Eval("func callNative(s string, i int) int { return myNative(i, s) }")
-	result := context.Eval("func(s string, i int) (int, string) { return callNative(s, i), s }")
-	r, _ := result[0].(chicklet.Callable).Call("hello world", 17)
+	evalFunc := context.Eval("func(s string, i int) (int, string) { return callNative(s, i), s }")[0].(chicklet.Callable)
+	r, _ := evalFunc.Call("hello world", 17)
 	fmt.Printf("result is %v of type %T\n", r, r)
 }
