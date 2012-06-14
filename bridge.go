@@ -8,6 +8,7 @@ import (
 	"go/token"
 	"log"
 	"reflect"
+	"fmt"
 )
 
 /*
@@ -18,6 +19,34 @@ var (
 	evalTypes   = make(map[reflect.Type]Type)
 	nativeTypes = make(map[Type]reflect.Type)
 )
+
+func reflectValueFromValue(v Value, t *Thread) reflect.Value {
+	value := reflect.ValueOf(v)
+	method := value.MethodByName("Get")
+	if method.Type().NumIn() == 0 {
+		return method.Call([]reflect.Value{})[0]
+	}
+	return method.Call([]reflect.Value{reflect.ValueOf(t)})[0]
+}
+
+func ValueFromNative(t Thing, thread *Thread) Value {
+	typ := reflect.TypeOf(t)
+	switch typ.Kind() {
+	case reflect.Func:
+		_, fval := FuncFromNativeTyped(func(thread *Thread, in, out []Value) {
+			var reflect_in []reflect.Value
+			for _, inv := range in {
+				reflect_in = append(reflect_in, reflectValueFromValue(inv, thread))
+			}
+			reflect_out := reflect.ValueOf(t).Call(reflect_in)
+			for index, outv := range reflect_out {
+				out[index] = ValueFromNative(outv.Interface(), thread)
+			}
+		}, t)
+		return fval
+	}
+	return TypeFromNative(typ).create(t)
+}
 
 // TypeFromNative converts a regular Go type into a the corresponding
 // interpreter Type.
@@ -137,6 +166,24 @@ func TypeOfNative(v interface{}) Type { return TypeFromNative(reflect.TypeOf(v))
 type nativeFunc struct {
 	fn      func(*Thread, []Value, []Value)
 	in, out int
+}
+
+func (f *nativeFunc) Execute(things... Thing) ([]Thing, error) {
+	if len(things) != f.in {
+		return nil, &CallError{fmt.Sprint("Wrong number of arguments. Wanted ", f.in, " but got ", len(things))}
+	}
+	var in []Value
+	thread := &Thread{}
+	for _, t := range things {
+		in = append(in, ValueFromNative(t, thread))
+	}
+	out := make([]Value, f.out, f.out)
+	f.fn(thread, in, out)
+	var rval []Thing
+	for _, val := range out {
+		rval = append(rval, reflectValueFromValue(val, thread).Interface())
+	}
+	return rval, nil
 }
 
 func (f *nativeFunc) NewFrame() *Frame {

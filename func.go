@@ -4,6 +4,10 @@
 
 package chicklet
 
+import (
+	"fmt"
+)
+
 /*
  * Virtual machine
  */
@@ -63,6 +67,27 @@ type evalFunc struct {
 	inTypes   []Type
         outTypes  []Type
 	code      code
+}
+
+func (f *evalFunc) Execute(things... Thing) ([]Thing, error) {
+	if len(things) != len(f.inTypes) {
+		return nil, &CallError{fmt.Sprint("Wrong number of arguments. Wanted ", len(f.inTypes), " but got ", len(things))}
+	}
+	frame := f.NewFrame()
+	thread := &Thread{}
+	for index, thing := range things {
+		frame.Vars[index] = ValueFromNative(thing, thread)
+	}
+	for index, t := range f.outTypes {
+		frame.Vars[len(f.inTypes) + index] = t.(Type).Zero()
+	}
+	thread.f = frame
+	f.Call(thread)
+	var rval []Thing
+	for index, _ := range f.outTypes {
+		rval = append(rval, reflectValueFromValue(frame.Vars[len(f.inTypes) + index], thread).Interface())
+	}
+	return rval, nil
 }
 
 func (f *evalFunc) NewFrame() *Frame { return f.outer.child(f.frameSize) }

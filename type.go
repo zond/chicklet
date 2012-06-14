@@ -5,6 +5,7 @@
 package chicklet
 
 import (
+	"fmt"
 	"go/ast"
 	"go/token"
 	"log"
@@ -54,6 +55,7 @@ type Type interface {
 	String() string
 	// The position where this type was defined, if any.
 	Pos() token.Pos
+	create(Thing) Value
 }
 
 type BoundedType interface {
@@ -141,6 +143,8 @@ func (commonType) isIdeal() bool { return false }
 
 func (commonType) Pos() token.Pos { return token.NoPos }
 
+func (t commonType) create(v Thing) Value { panic(fmt.Sprint("Create for ", t, " is undefined")) }
+
 /*
  * Package
  */
@@ -191,6 +195,12 @@ type boolType struct {
 }
 
 var BoolType = universe.DefineType("bool", universePos, &boolType{})
+
+func (t *boolType) create(v Thing) Value {
+	z := t.Zero()
+	*(z.(*boolV)) = boolV(v.(bool))
+	return z
+}
 
 func (t *boolType) compat(o Type, conv bool) bool {
 	_, ok := o.lit().(*boolType)
@@ -247,6 +257,29 @@ func (t *uintType) lit() Type { return t }
 func (t *uintType) isInteger() bool { return true }
 
 func (t *uintType) String() string { return "<" + t.name + ">" }
+
+func (t *uintType) create(v Thing) Value {
+	z := t.Zero()
+	switch t.Bits {
+	case 0:
+		if t.Ptr {
+			*(z.(*uintptrV)) = uintptrV(v.(uintptr))
+		} else {
+			*(z.(*uintV)) = uintV(v.(uint))
+		}
+	case 8:
+		*(z.(*uint8V)) = uint8V(v.(uint8))
+	case 16:
+		*(z.(*uint16V)) = uint16V(v.(uint16))
+	case 32:
+		*(z.(*uint32V)) = uint32V(v.(uint32))
+	case 64:
+		*(z.(*uint64V)) = uint64V(v.(uint64))
+	default:
+		panic("unexpected uint bit count")
+	}
+	return z
+}
 
 func (t *uintType) Zero() Value {
 	switch t.Bits {
@@ -327,6 +360,25 @@ func (t *intType) lit() Type { return t }
 func (t *intType) isInteger() bool { return true }
 
 func (t *intType) String() string { return "<" + t.name + ">" }
+
+func (t *intType) create(v Thing) Value {
+	z := t.Zero()
+	switch t.Bits {
+	case 0:
+		*(z.(*intV)) = intV(v.(int))
+	case 8:
+		*(z.(*int8V)) = int8V(v.(int8))
+	case 16:
+		*(z.(*int16V)) = int16V(v.(int16))
+	case 32:
+		*(z.(*int32V)) = int32V(v.(int32))
+	case 64:
+		*(z.(*int64V)) = int64V(v.(int64))
+	default:
+		panic("unexpected int bit count")
+	}
+	return z
+}
 
 func (t *intType) Zero() Value {
 	switch t.Bits {
@@ -425,6 +477,19 @@ func (t *floatType) isFloat() bool { return true }
 
 func (t *floatType) String() string { return "<" + t.name + ">" }
 
+func (t *floatType) create(v Thing) Value {
+	z := t.Zero()
+	switch t.Bits {
+	case 32:
+		*(z.(*float32V)) = float32V(v.(float32))
+	case 64:
+		*(z.(*float64V)) = float64V(v.(float64))
+	default:
+		panic("unexpected float bit count")
+	}
+	return z
+}
+
 func (t *floatType) Zero() Value {
 	switch t.Bits {
 	case 32:
@@ -509,6 +574,12 @@ func (t *stringType) compat(o Type, conv bool) bool {
 func (t *stringType) lit() Type { return t }
 
 func (t *stringType) String() string { return "<string>" }
+
+func (t *stringType) create(v Thing) Value {
+	z := t.Zero()
+	*(z.(*stringV)) = stringV(v.(string))
+	return z
+}
 
 func (t *stringType) Zero() Value {
 	res := stringV("")
@@ -1198,6 +1269,8 @@ func (t *NamedType) isIdeal() bool { return false }
 func (t *NamedType) String() string { return t.Name }
 
 func (t *NamedType) Zero() Value { return t.Def.Zero() }
+
+func (t *NamedType) create(v Thing) Value { return t.Def.create(v) }
 
 /*
  * Multi-valued type
