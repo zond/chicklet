@@ -728,6 +728,18 @@ func (t *StructType) compat(o Type, conv bool) bool {
 
 func (t *StructType) lit() Type { return t }
 
+func (t *StructType) create(v Thing) Value {
+	z := *(t.Zero().(*structV))
+	typ := reflect.TypeOf(v)
+	val := reflect.ValueOf(v)
+
+	thread := &Thread{}
+	for i := 0; i < typ.NumField(); i++ {
+		z[i] = ValueFromNative(val.Field(i).Interface(), thread)
+	}
+	return &z
+}
+
 func (t *StructType) String() string {
 	s := "struct {"
 	for i, f := range t.Elems {

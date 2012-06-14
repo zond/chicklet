@@ -35,11 +35,11 @@ func TestDefineInt(t *testing.T) {
 func TestDefineFloat(t *testing.T) {
 	defineTest(t, 0.12)
 }
-/*
+
 func TestDefineStruct(t *testing.T) {
-	defineTest(t, &testStruct{1, "hello"})
+	defineTest(t, testStruct{1, "hello"})
 }
-*/
+
 func TestDefineBool(t *testing.T) {
 	defineTest(t, false)
 	defineTest(t, true)
@@ -138,8 +138,7 @@ func evalFuncCallTest(t *testing.T, decl string, args, expect []Thing) {
 func evalTest(t *testing.T, c *World, s string, exp Thing) {
 	val := c.Eval(s)
 	if exp != val && !reflect.DeepEqual(exp, val) {
-		fmt.Printf("val is %v of type %T\n", val, val)
-		t.Error(s, "should generate", exp, "but generated", val)
+		t.Error(fmt.Sprintf("%v should generate %v of type %T but generated %v of type %T\n", s, exp, exp, val, val))
 	}
 }
 
@@ -149,12 +148,12 @@ func evalTestReturn(t *testing.T, s string, exp Thing) {
 }
 
 type testStruct struct {
-	i int
-	s string
+	I int
+	S string
 }
 
 type testStruct2 struct {
-	i int
-	f float64
-	s *testStruct
+	I int
+	F float64
+	S *testStruct
 }
