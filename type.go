@@ -653,6 +653,7 @@ type StructField struct {
 type StructType struct {
 	commonType
 	Elems []StructField
+	nativeType reflect.Type
 }
 
 var structTypes = newTypeArrayMap()
@@ -699,7 +700,7 @@ func NewStructType(fields []StructField) *StructType {
 	t, ok := tMap[key]
 	if !ok {
 		// Create new struct type
-		t = &StructType{commonType{}, fields}
+		t = &StructType{commonType{}, fields, nil}
 		tMap[key] = t
 	}
 	return t
@@ -735,9 +736,9 @@ func (t *StructType) create(v Thing) Value {
 
 	thread := &Thread{}
 	for i := 0; i < typ.NumField(); i++ {
-		z.content[i] = ValueFromNative(val.Field(i).Interface(), thread)
+		z[i] = ValueFromNative(val.Field(i).Interface(), thread)
 	}
-	z.nativeType = reflect.TypeOf(v)
+	fmt.Printf("created a %v, %p\n", z, &z)
 	return &z
 }
 
@@ -756,9 +757,9 @@ func (t *StructType) String() string {
 }
 
 func (t *StructType) Zero() Value {
-	res := structV{make([]Value, len(t.Elems)), nil}
+	res := structV(make([]Value, len(t.Elems)))
 	for i, f := range t.Elems {
-		res.content[i] = f.Type.Zero()
+		res[i] = f.Type.Zero()
 	}
 	return &res
 }

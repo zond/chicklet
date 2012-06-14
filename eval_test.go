@@ -194,7 +194,7 @@ func toValue(val interface{}) Value {
 		for i, e := range val {
 			elems[i] = toValue(e)
 		}
-		r := structV{elems, nil}
+		r := structV(elems)
 		return &r
 	case varray:
 		elems := make([]Value, len(val))

@@ -129,6 +129,7 @@ func TypeFromNative(t reflect.Type) Type {
 			fields[i].Anonymous = sf.Anonymous
 		}
 		et = NewStructType(fields)
+		et.(*StructType).nativeType = t
 	case reflect.UnsafePointer:
 		log.Panicf("%T not implemented", t)
 	default:

@@ -7,7 +7,6 @@ package chicklet
 import (
 	"errors"
 	"fmt"
-	"reflect"
 	"math/big"
 )
 
@@ -422,16 +421,13 @@ func (v *arrayV) Sub(i int64, len int64) ArrayValue {
  * Struct
  */
 
-type structV struct {
-	content []Value
-	nativeType reflect.Type
-}
+type structV []Value
 
 // TODO(austin) Should these methods (and arrayV's) be on structV
 // instead of *structV?
 func (v *structV) String() string {
 	res := "{"
-	for i, v := range v.content {
+	for i, v := range *v {
 		if i > 0 {
 			res += ", "
 		}
@@ -442,18 +438,20 @@ func (v *structV) String() string {
 
 func (v *structV) Assign(t *Thread, o Value) {
 	oa := o.(StructValue)
-	l := len(v.content)
+	l := len(*v)
 	for i := 0; i < l; i++ {
-		v.content[i].Assign(t, oa.Field(t, i))
+		(*v)[i].Assign(t, oa.Field(t, i))
 	}
 }
 
 func (v *structV) Get(*Thread) StructValue { return v }
 
-func (v *structV) GetNative(t *Thread) Thing { return v.Get(t) }
+func (v *structV) GetNative(t *Thread) Thing { 
+	return v.Get(t)
+}
 
 func (v *structV) Field(t *Thread, i int) Value {
-	return v.content[i]
+	return (*v)[i]
 }
 
 /*
