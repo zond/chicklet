@@ -738,7 +738,7 @@ func (t *StructType) create(v Thing) Value {
 	for i := 0; i < typ.NumField(); i++ {
 		z[i] = ValueFromNative(val.Field(i).Interface(), thread)
 	}
-	fmt.Printf("created a %v, %p\n", z, &z)
+	fmt.Printf("created a %v, %T, %p\n", &z, &z, &z)
 	return &z
 }
 

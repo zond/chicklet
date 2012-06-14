@@ -447,7 +447,9 @@ func (v *structV) Assign(t *Thread, o Value) {
 func (v *structV) Get(*Thread) StructValue { return v }
 
 func (v *structV) GetNative(t *Thread) Thing { 
-	return v.Get(t)
+	x := v.Get(t)
+	fmt.Printf("returning a %v, %T, %p\n", v, v, v)
+	return x
 }
 
 func (v *structV) Field(t *Thread, i int) Value {
