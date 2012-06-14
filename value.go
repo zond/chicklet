@@ -7,6 +7,7 @@ package chicklet
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"math/big"
 )
 
@@ -17,6 +18,7 @@ type Value interface {
 	// value interface (BoolValue, etc.), but must not assume
 	// anything about its specific type.
 	Assign(t *Thread, o Value)
+	GetNative(*Thread) Thing
 }
 
 type BoolValue interface {
@@ -154,6 +156,8 @@ func (v *boolV) Assign(t *Thread, o Value) { *v = boolV(o.(BoolValue).Get(t)) }
 
 func (v *boolV) Get(*Thread) bool { return bool(*v) }
 
+func (v *boolV) GetNative(t *Thread) Thing { return v.Get(t) }
+
 func (v *boolV) Set(t *Thread, x bool) { *v = boolV(x) }
 
 /*
@@ -168,6 +172,8 @@ func (v *uint8V) Assign(t *Thread, o Value) { *v = uint8V(o.(UintValue).Get(t)) 
 
 func (v *uint8V) Get(*Thread) uint64 { return uint64(*v) }
 
+func (v *uint8V) GetNative(t *Thread) Thing { return v.Get(t) }
+
 func (v *uint8V) Set(t *Thread, x uint64) { *v = uint8V(x) }
 
 type uint16V uint16
@@ -177,6 +183,8 @@ func (v *uint16V) String() string { return fmt.Sprint(*v) }
 func (v *uint16V) Assign(t *Thread, o Value) { *v = uint16V(o.(UintValue).Get(t)) }
 
 func (v *uint16V) Get(*Thread) uint64 { return uint64(*v) }
+
+func (v *uint16V) GetNative(t *Thread) Thing { return v.Get(t) }
 
 func (v *uint16V) Set(t *Thread, x uint64) { *v = uint16V(x) }
 
@@ -188,6 +196,8 @@ func (v *uint32V) Assign(t *Thread, o Value) { *v = uint32V(o.(UintValue).Get(t)
 
 func (v *uint32V) Get(*Thread) uint64 { return uint64(*v) }
 
+func (v *uint32V) GetNative(t *Thread) Thing { return v.Get(t) }
+
 func (v *uint32V) Set(t *Thread, x uint64) { *v = uint32V(x) }
 
 type uint64V uint64
@@ -197,6 +207,8 @@ func (v *uint64V) String() string { return fmt.Sprint(*v) }
 func (v *uint64V) Assign(t *Thread, o Value) { *v = uint64V(o.(UintValue).Get(t)) }
 
 func (v *uint64V) Get(*Thread) uint64 { return uint64(*v) }
+
+func (v *uint64V) GetNative(t *Thread) Thing { return v.Get(t) }
 
 func (v *uint64V) Set(t *Thread, x uint64) { *v = uint64V(x) }
 
@@ -208,6 +220,8 @@ func (v *uintV) Assign(t *Thread, o Value) { *v = uintV(o.(UintValue).Get(t)) }
 
 func (v *uintV) Get(*Thread) uint64 { return uint64(*v) }
 
+func (v *uintV) GetNative(t *Thread) Thing { return v.Get(t) }
+
 func (v *uintV) Set(t *Thread, x uint64) { *v = uintV(x) }
 
 type uintptrV uintptr
@@ -217,6 +231,8 @@ func (v *uintptrV) String() string { return fmt.Sprint(*v) }
 func (v *uintptrV) Assign(t *Thread, o Value) { *v = uintptrV(o.(UintValue).Get(t)) }
 
 func (v *uintptrV) Get(*Thread) uint64 { return uint64(*v) }
+
+func (v *uintptrV) GetNative(t *Thread) Thing { return v.Get(t) }
 
 func (v *uintptrV) Set(t *Thread, x uint64) { *v = uintptrV(x) }
 
@@ -232,6 +248,8 @@ func (v *int8V) Assign(t *Thread, o Value) { *v = int8V(o.(IntValue).Get(t)) }
 
 func (v *int8V) Get(*Thread) int64 { return int64(*v) }
 
+func (v *int8V) GetNative(t *Thread) Thing { return v.Get(t) }
+
 func (v *int8V) Set(t *Thread, x int64) { *v = int8V(x) }
 
 type int16V int16
@@ -241,6 +259,8 @@ func (v *int16V) String() string { return fmt.Sprint(*v) }
 func (v *int16V) Assign(t *Thread, o Value) { *v = int16V(o.(IntValue).Get(t)) }
 
 func (v *int16V) Get(*Thread) int64 { return int64(*v) }
+
+func (v *int16V) GetNative(t *Thread) Thing { return v.Get(t) }
 
 func (v *int16V) Set(t *Thread, x int64) { *v = int16V(x) }
 
@@ -252,6 +272,8 @@ func (v *int32V) Assign(t *Thread, o Value) { *v = int32V(o.(IntValue).Get(t)) }
 
 func (v *int32V) Get(*Thread) int64 { return int64(*v) }
 
+func (v *int32V) GetNative(t *Thread) Thing { return v.Get(t) }
+
 func (v *int32V) Set(t *Thread, x int64) { *v = int32V(x) }
 
 type int64V int64
@@ -262,6 +284,8 @@ func (v *int64V) Assign(t *Thread, o Value) { *v = int64V(o.(IntValue).Get(t)) }
 
 func (v *int64V) Get(*Thread) int64 { return int64(*v) }
 
+func (v *int64V) GetNative(t *Thread) Thing { return v.Get(t) }
+
 func (v *int64V) Set(t *Thread, x int64) { *v = int64V(x) }
 
 type intV int
@@ -271,6 +295,8 @@ func (v *intV) String() string { return fmt.Sprint(*v) }
 func (v *intV) Assign(t *Thread, o Value) { *v = intV(o.(IntValue).Get(t)) }
 
 func (v *intV) Get(*Thread) int64 { return int64(*v) }
+
+func (v *intV) GetNative(t *Thread) Thing { return v.Get(t) }
 
 func (v *intV) Set(t *Thread, x int64) { *v = intV(x) }
 
@@ -290,6 +316,8 @@ func (v *idealIntV) Assign(t *Thread, o Value) {
 
 func (v *idealIntV) Get() *big.Int { return v.V }
 
+func (v *idealIntV) GetNative(t *Thread) Thing { return v.Get() }
+
 /*
  * Float
  */
@@ -302,6 +330,8 @@ func (v *float32V) Assign(t *Thread, o Value) { *v = float32V(o.(FloatValue).Get
 
 func (v *float32V) Get(*Thread) float64 { return float64(*v) }
 
+func (v *float32V) GetNative(t *Thread) Thing { return v.Get(t) }
+
 func (v *float32V) Set(t *Thread, x float64) { *v = float32V(x) }
 
 type float64V float64
@@ -311,6 +341,8 @@ func (v *float64V) String() string { return fmt.Sprint(*v) }
 func (v *float64V) Assign(t *Thread, o Value) { *v = float64V(o.(FloatValue).Get(t)) }
 
 func (v *float64V) Get(*Thread) float64 { return float64(*v) }
+
+func (v *float64V) GetNative(t *Thread) Thing { return v.Get(t) }
 
 func (v *float64V) Set(t *Thread, x float64) { *v = float64V(x) }
 
@@ -328,6 +360,8 @@ func (v *idealFloatV) Assign(t *Thread, o Value) {
 	v.V = o.(IdealFloatValue).Get()
 }
 
+func (v *idealFloatV) GetNative(t *Thread) Thing { return v.Get() }
+
 func (v *idealFloatV) Get() *big.Rat { return v.V }
 
 /*
@@ -341,6 +375,8 @@ func (v *stringV) String() string { return fmt.Sprint(*v) }
 func (v *stringV) Assign(t *Thread, o Value) { *v = stringV(o.(StringValue).Get(t)) }
 
 func (v *stringV) Get(*Thread) string { return string(*v) }
+
+func (v *stringV) GetNative(t *Thread) Thing { return v.Get(t) }
 
 func (v *stringV) Set(t *Thread, x string) { *v = stringV(x) }
 
@@ -371,6 +407,8 @@ func (v *arrayV) Assign(t *Thread, o Value) {
 
 func (v *arrayV) Get(*Thread) ArrayValue { return v }
 
+func (v *arrayV) GetNative(t *Thread) Thing { return v.Get(t) }
+
 func (v *arrayV) Elem(t *Thread, i int64) Value {
 	return (*v)[i]
 }
@@ -384,13 +422,16 @@ func (v *arrayV) Sub(i int64, len int64) ArrayValue {
  * Struct
  */
 
-type structV []Value
+type structV struct {
+	content []Value
+	nativeType reflect.Type
+}
 
 // TODO(austin) Should these methods (and arrayV's) be on structV
 // instead of *structV?
 func (v *structV) String() string {
 	res := "{"
-	for i, v := range *v {
+	for i, v := range v.content {
 		if i > 0 {
 			res += ", "
 		}
@@ -401,16 +442,18 @@ func (v *structV) String() string {
 
 func (v *structV) Assign(t *Thread, o Value) {
 	oa := o.(StructValue)
-	l := len(*v)
+	l := len(v.content)
 	for i := 0; i < l; i++ {
-		(*v)[i].Assign(t, oa.Field(t, i))
+		v.content[i].Assign(t, oa.Field(t, i))
 	}
 }
 
 func (v *structV) Get(*Thread) StructValue { return v }
 
+func (v *structV) GetNative(t *Thread) Thing { return v.Get(t) }
+
 func (v *structV) Field(t *Thread, i int) Value {
-	return (*v)[i]
+	return v.content[i]
 }
 
 /*
@@ -433,6 +476,8 @@ func (v *ptrV) Assign(t *Thread, o Value) { v.target = o.(PtrValue).Get(t) }
 
 func (v *ptrV) Get(*Thread) Value { return v.target }
 
+func (v *ptrV) GetNative(t *Thread) Thing { return v.Get(t) }
+
 func (v *ptrV) Set(t *Thread, x Value) { v.target = x }
 
 /*
@@ -451,6 +496,8 @@ func (v *funcV) String() string {
 func (v *funcV) Assign(t *Thread, o Value) { v.target = o.(FuncValue).Get(t) }
 
 func (v *funcV) Get(*Thread) Func { return v.target }
+
+func (v *funcV) GetNative(t *Thread) Thing { return v.Get(t) }
 
 func (v *funcV) Set(t *Thread, x Func) { v.target = x }
 
@@ -475,6 +522,8 @@ func (v *interfaceV) Assign(t *Thread, o Value) {
 
 func (v *interfaceV) Get(*Thread) Interface { return v.Interface }
 
+func (v *interfaceV) GetNative(t *Thread) Thing { return v.Get(t) }
+
 func (v *interfaceV) Set(t *Thread, x Interface) {
 	v.Interface = x
 }
@@ -497,6 +546,8 @@ func (v *sliceV) String() string {
 func (v *sliceV) Assign(t *Thread, o Value) { v.Slice = o.(SliceValue).Get(t) }
 
 func (v *sliceV) Get(*Thread) Slice { return v.Slice }
+
+func (v *sliceV) GetNative(t *Thread) Thing { return v.Get(t) }
 
 func (v *sliceV) Set(t *Thread, x Slice) { v.Slice = x }
 
@@ -528,6 +579,8 @@ func (v *mapV) String() string {
 func (v *mapV) Assign(t *Thread, o Value) { v.target = o.(MapValue).Get(t) }
 
 func (v *mapV) Get(*Thread) Map { return v.target }
+
+func (v *mapV) GetNative(t *Thread) Thing { return v.Get(t) }
 
 func (v *mapV) Set(t *Thread, x Map) { v.target = x }
 
@@ -574,6 +627,8 @@ func (p *packageV) Get(*Thread) PackageValue {
 	return p
 }
 
+func (v *packageV) GetNative(t *Thread) Thing { return v.Get(t) }
+
 func (p *packageV) Ident(t *Thread, n int) Value {
 	return p.idents[n]
 }
@@ -583,6 +638,14 @@ func (p *packageV) Ident(t *Thread, n int) Value {
  */
 
 type multiV []Value
+
+func (v multiV) GetNative(t *Thread) Thing { 
+	var rval []Thing
+	for _, v := range v {
+		rval = append(rval, ValueFromNative(v, t))
+	}
+	return rval
+}
 
 func (v multiV) String() string {
 	res := "("

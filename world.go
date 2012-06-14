@@ -342,7 +342,7 @@ func (self *World) Eval(s string) Thing {
 	if value == nil {
 		return nil
 	}
-	return reflectValueFromValue(value, &Thread{}).Interface()
+	return value.GetNative(&Thread{})
 }
 
 func (w *World) compileImport(fset *token.FileSet, text string) (Code, error) {

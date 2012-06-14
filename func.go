@@ -85,7 +85,7 @@ func (f *evalFunc) Execute(things... Thing) ([]Thing, error) {
 	f.Call(thread)
 	var rval []Thing
 	for index, _ := range f.outTypes {
-		rval = append(rval, reflectValueFromValue(frame.Vars[len(f.inTypes) + index], thread).Interface())
+		rval = append(rval, frame.Vars[len(f.inTypes) + index].GetNative(thread))
 	}
 	return rval, nil
 }

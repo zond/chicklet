@@ -735,8 +735,9 @@ func (t *StructType) create(v Thing) Value {
 
 	thread := &Thread{}
 	for i := 0; i < typ.NumField(); i++ {
-		z[i] = ValueFromNative(val.Field(i).Interface(), thread)
+		z.content[i] = ValueFromNative(val.Field(i).Interface(), thread)
 	}
+	z.nativeType = reflect.TypeOf(v)
 	return &z
 }
 
@@ -755,9 +756,9 @@ func (t *StructType) String() string {
 }
 
 func (t *StructType) Zero() Value {
-	res := structV(make([]Value, len(t.Elems)))
+	res := structV{make([]Value, len(t.Elems)), nil}
 	for i, f := range t.Elems {
-		res[i] = f.Type.Zero()
+		res.content[i] = f.Type.Zero()
 	}
 	return &res
 }

@@ -20,15 +20,6 @@ var (
 	nativeTypes = make(map[Type]reflect.Type)
 )
 
-func reflectValueFromValue(v Value, t *Thread) reflect.Value {
-	value := reflect.ValueOf(v)
-	method := value.MethodByName("Get")
-	if method.Type().NumIn() == 0 {
-		return method.Call([]reflect.Value{})[0]
-	}
-	return method.Call([]reflect.Value{reflect.ValueOf(t)})[0]
-}
-
 func ValueFromNative(t Thing, thread *Thread) Value {
 	typ := reflect.TypeOf(t)
 	switch typ.Kind() {
@@ -36,13 +27,8 @@ func ValueFromNative(t Thing, thread *Thread) Value {
 		val := reflect.ValueOf(t)
 		_, fval := FuncFromNativeTyped(func(thread *Thread, in, out []Value) {
 			var reflect_in []reflect.Value
-			for index, inv := range in {
-				reflect_value := reflectValueFromValue(inv, thread)
-				wanted_type := val.Type().In(index)
-				if reflect_value.Type() != wanted_type {
-					panic(fmt.Sprint("Argument ", index, " to ", typ, " should be ", wanted_type, " but is ", reflect_value.Type()))
-				}
-				reflect_in = append(reflect_in, reflect_value)
+			for _, inv := range in {
+				reflect_in = append(reflect_in, reflect.ValueOf(inv.GetNative(thread)))
 			}
 			reflect_out := val.Call(reflect_in)
 			for index, outv := range reflect_out {
@@ -187,7 +173,7 @@ func (f *nativeFunc) Execute(things... Thing) ([]Thing, error) {
 	f.fn(thread, in, out)
 	var rval []Thing
 	for _, val := range out {
-		rval = append(rval, reflectValueFromValue(val, thread).Interface())
+		rval = append(rval, val.GetNative(thread))
 	}
 	return rval, nil
 }
