@@ -33,12 +33,18 @@ func ValueFromNative(t Thing, thread *Thread) Value {
 	typ := reflect.TypeOf(t)
 	switch typ.Kind() {
 	case reflect.Func:
+		val := reflect.ValueOf(t)
 		_, fval := FuncFromNativeTyped(func(thread *Thread, in, out []Value) {
 			var reflect_in []reflect.Value
-			for _, inv := range in {
-				reflect_in = append(reflect_in, reflectValueFromValue(inv, thread))
+			for index, inv := range in {
+				reflect_value := reflectValueFromValue(inv, thread)
+				wanted_type := val.Type().In(index)
+				if reflect_value.Type() != wanted_type {
+					panic(fmt.Sprint("Argument ", index, " to ", typ, " should be ", wanted_type, " but is ", reflect_value.Type()))
+				}
+				reflect_in = append(reflect_in, reflect_value)
 			}
-			reflect_out := reflect.ValueOf(t).Call(reflect_in)
+			reflect_out := val.Call(reflect_in)
 			for index, outv := range reflect_out {
 				out[index] = ValueFromNative(outv.Interface(), thread)
 			}
