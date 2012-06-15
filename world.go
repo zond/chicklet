@@ -330,19 +330,19 @@ func (self *World) Define(name string, thing Thing) {
 	self.DefineVar(name, TypeFromNative(reflect.TypeOf(thing)), ValueFromNative(thing, &Thread{}))
 }
 
-func (self *World) Eval(s string) Thing {
+func (self *World) Eval(s string) (Thing, error) {
 	code, err := self.Comp(s)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	value, err := code.Run()
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	if value == nil {
-		return nil
+		return nil, nil
 	}
-	return value.GetNative(&Thread{})
+	return value.GetNative(&Thread{}), nil
 }
 
 func (w *World) compileImport(fset *token.FileSet, text string) (Code, error) {

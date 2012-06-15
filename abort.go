@@ -26,6 +26,11 @@ func (t *Thread) Try(f func(t *Thread)) error {
 	c := make(chan error)
 	t.abort = c
 	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				c <- &CallError{fmt.Sprint(r)}
+			}
+		}()
 		f(t)
 		c <- nil
 	}()

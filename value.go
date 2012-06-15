@@ -171,7 +171,7 @@ func (v *uint8V) Assign(t *Thread, o Value) { *v = uint8V(o.(UintValue).Get(t)) 
 
 func (v *uint8V) Get(*Thread) uint64 { return uint64(*v) }
 
-func (v *uint8V) GetNative(t *Thread) Thing { return v.Get(t) }
+func (v *uint8V) GetNative(t *Thread) Thing { return uint(v.Get(t)) }
 
 func (v *uint8V) Set(t *Thread, x uint64) { *v = uint8V(x) }
 
@@ -183,7 +183,7 @@ func (v *uint16V) Assign(t *Thread, o Value) { *v = uint16V(o.(UintValue).Get(t)
 
 func (v *uint16V) Get(*Thread) uint64 { return uint64(*v) }
 
-func (v *uint16V) GetNative(t *Thread) Thing { return v.Get(t) }
+func (v *uint16V) GetNative(t *Thread) Thing { return uint16(v.Get(t)) }
 
 func (v *uint16V) Set(t *Thread, x uint64) { *v = uint16V(x) }
 
@@ -195,7 +195,7 @@ func (v *uint32V) Assign(t *Thread, o Value) { *v = uint32V(o.(UintValue).Get(t)
 
 func (v *uint32V) Get(*Thread) uint64 { return uint64(*v) }
 
-func (v *uint32V) GetNative(t *Thread) Thing { return v.Get(t) }
+func (v *uint32V) GetNative(t *Thread) Thing { return uint32(v.Get(t)) }
 
 func (v *uint32V) Set(t *Thread, x uint64) { *v = uint32V(x) }
 
@@ -219,7 +219,7 @@ func (v *uintV) Assign(t *Thread, o Value) { *v = uintV(o.(UintValue).Get(t)) }
 
 func (v *uintV) Get(*Thread) uint64 { return uint64(*v) }
 
-func (v *uintV) GetNative(t *Thread) Thing { return v.Get(t) }
+func (v *uintV) GetNative(t *Thread) Thing { return uint(v.Get(t)) }
 
 func (v *uintV) Set(t *Thread, x uint64) { *v = uintV(x) }
 
@@ -231,7 +231,7 @@ func (v *uintptrV) Assign(t *Thread, o Value) { *v = uintptrV(o.(UintValue).Get(
 
 func (v *uintptrV) Get(*Thread) uint64 { return uint64(*v) }
 
-func (v *uintptrV) GetNative(t *Thread) Thing { return v.Get(t) }
+func (v *uintptrV) GetNative(t *Thread) Thing { return uintptr(v.Get(t)) }
 
 func (v *uintptrV) Set(t *Thread, x uint64) { *v = uintptrV(x) }
 
@@ -247,7 +247,7 @@ func (v *int8V) Assign(t *Thread, o Value) { *v = int8V(o.(IntValue).Get(t)) }
 
 func (v *int8V) Get(*Thread) int64 { return int64(*v) }
 
-func (v *int8V) GetNative(t *Thread) Thing { return v.Get(t) }
+func (v *int8V) GetNative(t *Thread) Thing { return int8(v.Get(t)) }
 
 func (v *int8V) Set(t *Thread, x int64) { *v = int8V(x) }
 
@@ -259,7 +259,7 @@ func (v *int16V) Assign(t *Thread, o Value) { *v = int16V(o.(IntValue).Get(t)) }
 
 func (v *int16V) Get(*Thread) int64 { return int64(*v) }
 
-func (v *int16V) GetNative(t *Thread) Thing { return v.Get(t) }
+func (v *int16V) GetNative(t *Thread) Thing { return int16(v.Get(t)) }
 
 func (v *int16V) Set(t *Thread, x int64) { *v = int16V(x) }
 
@@ -271,7 +271,7 @@ func (v *int32V) Assign(t *Thread, o Value) { *v = int32V(o.(IntValue).Get(t)) }
 
 func (v *int32V) Get(*Thread) int64 { return int64(*v) }
 
-func (v *int32V) GetNative(t *Thread) Thing { return v.Get(t) }
+func (v *int32V) GetNative(t *Thread) Thing { return int32(v.Get(t)) }
 
 func (v *int32V) Set(t *Thread, x int64) { *v = int32V(x) }
 
@@ -295,7 +295,7 @@ func (v *intV) Assign(t *Thread, o Value) { *v = intV(o.(IntValue).Get(t)) }
 
 func (v *intV) Get(*Thread) int64 { return int64(*v) }
 
-func (v *intV) GetNative(t *Thread) Thing { return v.Get(t) }
+func (v *intV) GetNative(t *Thread) Thing { return int(v.Get(t)) }
 
 func (v *intV) Set(t *Thread, x int64) { *v = intV(x) }
 
@@ -329,7 +329,7 @@ func (v *float32V) Assign(t *Thread, o Value) { *v = float32V(o.(FloatValue).Get
 
 func (v *float32V) Get(*Thread) float64 { return float64(*v) }
 
-func (v *float32V) GetNative(t *Thread) Thing { return v.Get(t) }
+func (v *float32V) GetNative(t *Thread) Thing { return float32(v.Get(t)) }
 
 func (v *float32V) Set(t *Thread, x float64) { *v = float32V(x) }
 
