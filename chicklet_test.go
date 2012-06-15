@@ -63,6 +63,15 @@ func TestDefineStructAndReturn(t *testing.T) {
 	evalTest(t, c, "myStruct{1.0, 3}", s)
 }
 
+func TestWorldSeparation(t *testing.T) {
+	c1 := NewWorld()
+	c2 := NewWorld()
+	c1.Define("x", 12)
+	c2.Define("x", 23)
+	evalTest(t, c1, "x", 12)
+	evalTest(t, c2, "x", 23)
+}
+
 func TestDefineBool(t *testing.T) {
 	defineTest(t, false)
 	defineTest(t, true)
@@ -114,31 +123,23 @@ func TestEvalFuncEval(t *testing.T) {
 	c := NewWorld()
 	c.Eval("func testFunc() int { return 11 }")
 	s := "testFunc()"
-	result, err := c.Eval(s)
+	result := eval(t, c, s)
+	if result != 11 {
+		t.Error(s, "should return 11 when called, returned", result)
+	}
+	s = "func() int { return testFunc() }"
+	result = eval(t, c, s)
+	rval, err := result.(Executable).Execute()
 	if err == nil {
-		if result != 11 {
-			t.Error(s, "should return 11 when called, returned", result)
-		}
-		s = "func() int { return testFunc() }"
-		result, err = c.Eval(s)
-		if err == nil {
-			rval, err := result.(Executable).Execute()
-			if err == nil {
-				if len(rval) == 1 {
-					if rval[0] != 11 {
-						t.Error(s, "should return 11 when called, returned", result)
-					}
-				} else {
-					t.Error(s, "should return one arg when called, returned", len(rval))
-				}
-			} else {
-				t.Error(s, "should be executable, but got", err)
+		if len(rval) == 1 {
+			if rval[0] != 11 {
+				t.Error(s, "should return 11 when called, returned", result)
 			}
 		} else {
-			t.Error(s, "should be evaluable, got", err)
+			t.Error(s, "should return one arg when called, returned", len(rval))
 		}
 	} else {
-		t.Error(s, "should be evaluable, got", err)
+		t.Error(s, "should be executable, but got", err)
 	}
 }
 
@@ -150,44 +151,44 @@ func defineTest(t *testing.T, value Thing) {
 
 func evalFuncCallTest(t *testing.T, decl string, args, expect []Thing) {
 	c := NewWorld()
-	result, err := c.Eval(decl)
+	result := eval(t, c, decl)
+	rval, err := result.(Executable).Execute(args...)
 	if err == nil {
-		rval, err := result.(Executable).Execute(args...)
-		if err == nil {
-			if len(rval) != len(expect) {
-				t.Error(decl, "should return", len(expect), "values when called with", args, ", returned", len(rval))
+		if len(rval) != len(expect) {
+			t.Error(decl, "should return", len(expect), "values when called with", args, ", returned", len(rval))
+		}
+		for index, val := range rval {
+			if val != expect[index] {
+				t.Error(decl, "should return", expect, "when called with", args, "returned, ", rval)
 			}
-			for index, val := range rval {
-				if val != expect[index] {
-					t.Error(decl, "should return", expect, "when called with", args, "returned, ", rval)
-				}
-			}
-		} else {
-			t.Error(decl, "should be executable, but got", err)
 		}
 	} else {
-		t.Error(decl, "should be evaluable, got", err)
+		t.Error(decl, "should be executable, but got", err)
 	}
 }
 
-func evalTest(t *testing.T, c *World, s string, exp Thing) {
+func eval(t *testing.T, c *World, s string) Thing {
 	val, err := c.Eval(s)
-	if err == nil {
-		if val == nil {
-			if exp != nil {
-				t.Error(fmt.Sprintf("%v should generate %v of type %T but generated %v of type %T\n", s, exp, exp, val, val))
-			}
-		} else {
-			v := reflect.ValueOf(exp)
-			typ := reflect.TypeOf(exp)
-			if typ.Kind() == reflect.Ptr && v.Elem().Type().Name() != "Rat" {
-				checkEquality(t, s, v.Elem().Interface(), reflect.ValueOf(val).Elem().Interface())
-			} else {
-				checkEquality(t, s, exp, val)
-			}
+	if err != nil {
+		t.Error(s,"should evaluate, got", err)
+	}
+	return val
+}
+
+func evalTest(t *testing.T, c *World, s string, exp Thing) {
+	val := eval(t, c, s)
+	if val == nil {
+		if exp != nil {
+			t.Error(fmt.Sprintf("%v should generate %v of type %T but generated %v of type %T\n", s, exp, exp, val, val))
 		}
 	} else {
-		t.Error(s, "should be evaluable, got", err)
+		v := reflect.ValueOf(exp)
+		typ := reflect.TypeOf(exp)
+		if typ.Kind() == reflect.Ptr && v.Elem().Type().Name() != "Rat" {
+			checkEquality(t, s, v.Elem().Interface(), reflect.ValueOf(val).Elem().Interface())
+		} else {
+			checkEquality(t, s, exp, val)
+		}
 	}
 }
 
