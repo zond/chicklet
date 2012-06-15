@@ -35,11 +35,11 @@ func TestDefineInt(t *testing.T) {
 func TestDefineFloat(t *testing.T) {
 	defineTest(t, 0.12)
 }
-/*
+
 func TestDefineStruct(t *testing.T) {
 	defineTest(t, testStruct{1, "hello"})
 }
-*/
+
 func TestDefineBool(t *testing.T) {
 	defineTest(t, false)
 	defineTest(t, true)

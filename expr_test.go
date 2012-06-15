@@ -24,6 +24,11 @@ var divByZero = "divide by zero"
 
 var hugeInteger = new(big.Int).Lsh(idealOne, 64)
 
+var strt = NewStructType([]StructField{
+	{"i", IntType, false},
+	{"j", Float64Type, false},
+	{"k", Float64Type, false},
+})
 var exprTests = []test{
 	Val("i", 1),
 	CErr("zzz", undefined),
@@ -393,10 +398,10 @@ var exprTests = []test{
 	Val2("x := map[int] int{1:42}; i, y := x[2]", "i", 0, "y", false),
 	RErr("x := map[int] int{};     i = x[1]", "key '1' not found"),
 
-	Val1("type S struct {i int; j float64; k float64}; ss := S{1,2.1,3.1}", "ss", vstruct{1, 2.1, 3.1}),
-	Val1("type S struct {i int; j float64; k float64}; ss := S{i:1,j:2.1,k:3.1}", "ss", vstruct{1, 2.1, 3.1}),
-	Val1("type S struct {i int; j float64; k float64}; ss := S{j:2.1,i:1,k:3.1}", "ss", vstruct{1, 2.1, 3.1}),
-	Val1("type S struct {i int; j float64; k float64}; ss := S{j:2.1,k:3.1,i:1}", "ss", vstruct{1, 2.1, 3.1}),
+	Val1("type S struct {i int; j float64; k float64}; ss := S{1,2.1,3.1}", "ss", vstruct{[]interface{}{1, 2.1, 3.1}, strt}),
+	Val1("type S struct {i int; j float64; k float64}; ss := S{i:1,j:2.1,k:3.1}", "ss", vstruct{[]interface{}{1, 2.1, 3.1}, strt}),
+	Val1("type S struct {i int; j float64; k float64}; ss := S{j:2.1,i:1,k:3.1}", "ss", vstruct{[]interface{}{1, 2.1, 3.1}, strt}),
+	Val1("type S struct {i int; j float64; k float64}; ss := S{j:2.1,k:3.1,i:1}", "ss", vstruct{[]interface{}{1, 2.1, 3.1}, strt}),
 	CErr(`type S struct {i int; j float64; k float64}; ss := S{i:1.1,j:2.1,k:3.1}`, "cannot convert literal #1 [(]type ideal float[)] to type int"),
 }
 

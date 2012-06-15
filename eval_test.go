@@ -154,7 +154,10 @@ func Val2(stmts string, expr1 string, val1 interface{}, expr2 string, val2 inter
  * Value constructors
  */
 
-type vstruct []interface{}
+type vstruct struct {
+	content []interface{}
+	typ Type
+}
 
 type varray []interface{}
 
@@ -190,11 +193,11 @@ func toValue(val interface{}) Value {
 		r := stringV(val)
 		return &r
 	case vstruct:
-		elems := make([]Value, len(val))
-		for i, e := range val {
+		elems := make([]Value, len(val.content))
+		for i, e := range val.content {
 			elems[i] = toValue(e)
 		}
-		r := structV(elems)
+		r := structV{elems,val.typ}
 		return &r
 	case varray:
 		elems := make([]Value, len(val))
@@ -261,7 +264,8 @@ func newTestWorld() *World {
 	def("u", UintType, uint(1))
 	def("f", Float64Type, 1.0)
 	def("s", StringType, "abc")
-	def("t", NewStructType([]StructField{{"a", IntType, false}}), vstruct{1})
+	st := NewStructType([]StructField{{"a", IntType, false}})
+	def("t", st, vstruct{[]interface{}{1}, st})
 	def("ai", NewArrayType(2, IntType), varray{1, 2})
 	def("aai", NewArrayType(2, NewArrayType(2, IntType)), varray{varray{1, 2}, varray{3, 4}})
 	def("aai2", NewArrayType(2, NewArrayType(2, IntType)), varray{varray{5, 6}, varray{7, 8}})
