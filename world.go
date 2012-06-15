@@ -23,6 +23,10 @@ import (
 // track the status of each package we visit (unvisited/visiting/done)
 var g_visiting = make(map[string]status)
 
+type Spec struct {
+	ImportsAllowed bool
+}
+
 type status int // status for visiting map
 const (
 	unvisited status = iota
@@ -44,6 +48,13 @@ func (self *ConvertError) Error() string {
 	return self.Message
 }
 
+type CompileError struct {
+	Message string
+}
+func (self *CompileError) Error() string {
+	return self.Message
+}
+
 type CallError struct {
 	Message string
 }
@@ -55,10 +66,11 @@ type World struct {
 	scope *Scope
 	frame *Frame
 	inits []Code
+	spec *Spec
 }
 
 func NewWorld() *World {
-	w := new(World)
+	w := &World{spec: &Spec{true}}
 	w.scope = universe.ChildScope()
 	w.scope.global = true // this block's vars allocate directly
 	return w
@@ -84,6 +96,10 @@ func (p *pkgCode) Run() (Value, error) {
 	t := new(Thread)
 	t.f = p.w.scope.NewFrame(nil)
 	return nil, t.Try(func(t *Thread) { p.code.exec(t) })
+}
+
+func (w *World) Spec() *Spec {
+	return w.spec
 }
 
 func (w *World) CompilePackage(fset *token.FileSet, files []*ast.File, pkgpath string) (Code, error) {
@@ -303,8 +319,12 @@ func (w *World) Compile(fset *token.FileSet, text string) (Code, error) {
 		}
 	}
 	if i := import_regexp.FindStringIndex(text); i != nil && i[0] == 0 {
-		// special case for import-ing on the command line...
-		return w.compileImport(fset, text)
+		if w.Spec().ImportsAllowed {
+			// special case for import-ing on the command line...
+			return w.compileImport(fset, text)
+		} else {
+			return nil, &CompileError{"Imports are not allowed"}
+		}
 	}
 
 	stmts, err := parseStmtList(fset, text)

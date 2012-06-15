@@ -20,6 +20,17 @@ func TestIdealFloatReturn(t *testing.T) {
 	evalTestReturn(t, "1.0 * 4.1", big.NewRat(41, 10))
 }
 
+func TestForbiddenImports(t *testing.T) {
+	c := NewWorld()
+	c.Spec().ImportsAllowed = false
+	s := "import \"fmt\""
+	_, err := c.Eval(s)
+	exp := &CompileError{"Imports are not allowed"}
+	if !reflect.DeepEqual(err, exp) {
+		t.Error(s, "should produce", exp, "but got", err)
+	}
+}
+
 func TestBoolReturn(t *testing.T) {
 	evalTestReturn(t, "1 == 1", true)
 }
