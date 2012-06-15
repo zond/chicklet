@@ -55,7 +55,7 @@ type Type interface {
 	String() string
 	// The position where this type was defined, if any.
 	Pos() token.Pos
-	create(Thing) Value
+	create(Thing, *Thread) Value
 }
 
 type BoundedType interface {
@@ -143,7 +143,7 @@ func (commonType) isIdeal() bool { return false }
 
 func (commonType) Pos() token.Pos { return token.NoPos }
 
-func (t commonType) create(v Thing) Value { panic(fmt.Sprint("Create for ", t, " is undefined")) }
+func (t commonType) create(v Thing, thread *Thread) Value { panic(fmt.Sprint("Create for ", t, " is undefined")) }
 
 /*
  * Package
@@ -196,7 +196,7 @@ type boolType struct {
 
 var BoolType = universe.DefineType("bool", universePos, &boolType{})
 
-func (t *boolType) create(v Thing) Value {
+func (t *boolType) create(v Thing, thread *Thread) Value {
 	z := t.Zero()
 	*(z.(*boolV)) = boolV(v.(bool))
 	return z
@@ -258,7 +258,7 @@ func (t *uintType) isInteger() bool { return true }
 
 func (t *uintType) String() string { return "<" + t.name + ">" }
 
-func (t *uintType) create(v Thing) Value {
+func (t *uintType) create(v Thing, thread *Thread) Value {
 	z := t.Zero()
 	switch t.Bits {
 	case 0:
@@ -361,7 +361,7 @@ func (t *intType) isInteger() bool { return true }
 
 func (t *intType) String() string { return "<" + t.name + ">" }
 
-func (t *intType) create(v Thing) Value {
+func (t *intType) create(v Thing, thread *Thread) Value {
 	z := t.Zero()
 	switch t.Bits {
 	case 0:
@@ -477,7 +477,7 @@ func (t *floatType) isFloat() bool { return true }
 
 func (t *floatType) String() string { return "<" + t.name + ">" }
 
-func (t *floatType) create(v Thing) Value {
+func (t *floatType) create(v Thing, thread *Thread) Value {
 	z := t.Zero()
 	switch t.Bits {
 	case 32:
@@ -575,7 +575,7 @@ func (t *stringType) lit() Type { return t }
 
 func (t *stringType) String() string { return "<string>" }
 
-func (t *stringType) create(v Thing) Value {
+func (t *stringType) create(v Thing, thread *Thread) Value {
 	z := t.Zero()
 	*(z.(*stringV)) = stringV(v.(string))
 	return z
@@ -729,12 +729,11 @@ func (t *StructType) compat(o Type, conv bool) bool {
 
 func (t *StructType) lit() Type { return t }
 
-func (t *StructType) create(v Thing) Value {
+func (t *StructType) create(v Thing, thread *Thread) Value {
 	z := *(t.Zero().(*structV))
 	typ := reflect.TypeOf(v)
 	val := reflect.ValueOf(v)
 
-	thread := &Thread{}
 	for i := 0; i < typ.NumField(); i++ {
 		z.content[i] = ValueFromNative(val.Field(i).Interface(), thread)
 	}
@@ -796,6 +795,12 @@ func (t *PtrType) compat(o Type, conv bool) bool {
 func (t *PtrType) lit() Type { return t }
 
 func (t *PtrType) String() string { return "*" + t.Elem.String() }
+
+func (t *PtrType) create(v Thing, thread *Thread) Value {
+	z := t.Zero()
+	z.(*ptrV).target = ValueFromNative(reflect.ValueOf(v).Elem().Interface(), thread)
+	return z
+}
 
 func (t *PtrType) Zero() Value { return &ptrV{nil} }
 
@@ -1283,7 +1288,7 @@ func (t *NamedType) String() string { return t.Name }
 
 func (t *NamedType) Zero() Value { return t.Def.Zero() }
 
-func (t *NamedType) create(v Thing) Value { return t.Def.create(v) }
+func (t *NamedType) create(v Thing, thread *Thread) Value { return t.Def.create(v, thread) }
 
 /*
  * Multi-valued type

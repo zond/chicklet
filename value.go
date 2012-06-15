@@ -486,7 +486,10 @@ func (v *ptrV) Assign(t *Thread, o Value) { v.target = o.(PtrValue).Get(t) }
 
 func (v *ptrV) Get(*Thread) Value { return v.target }
 
-func (v *ptrV) GetNative(t *Thread) Thing { return v.Get(t) }
+func (v *ptrV) GetNative(t *Thread) Thing { 
+	nativeTarget := v.target.GetNative(t)
+	return &nativeTarget
+}
 
 func (v *ptrV) Set(t *Thread, x Value) { v.target = x }
 

@@ -37,7 +37,7 @@ func ValueFromNative(t Thing, thread *Thread) Value {
 		}, t)
 		return fval
 	}
-	return TypeFromNative(typ).create(t)
+	return TypeFromNative(typ).create(t, thread)
 }
 
 // TypeFromNative converts a regular Go type into a the corresponding

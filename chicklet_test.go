@@ -40,6 +40,10 @@ func TestDefineStruct(t *testing.T) {
 	defineTest(t, testStruct{1, "hello"})
 }
 
+func TestDefineStructPtr(t *testing.T) {
+	defineTest(t, &testStruct{1, "hello"})
+}
+
 func TestDefineBool(t *testing.T) {
 	defineTest(t, false)
 	defineTest(t, true)
@@ -150,11 +154,28 @@ func evalFuncCallTest(t *testing.T, decl string, args, expect []Thing) {
 func evalTest(t *testing.T, c *World, s string, exp Thing) {
 	val, err := c.Eval(s)
 	if err == nil {
-		if exp != val && !reflect.DeepEqual(exp, val) {
-			t.Error(fmt.Sprintf("%v should generate %v of type %T but generated %v of type %T\n", s, exp, exp, val, val))
+		if val == nil {
+			if exp != nil {
+				t.Error(fmt.Sprintf("%v should generate %v of type %T but generated %v of type %T\n", s, exp, exp, val, val))
+			}
+		} else {
+			v := reflect.ValueOf(exp)
+			typ := reflect.TypeOf(exp)
+			if typ.Kind() == reflect.Ptr && v.Elem().Type().Name() != "Rat" {
+				checkEquality(t, s, v.Elem().Interface(), reflect.ValueOf(val).Elem().Interface())
+			} else {
+				checkEquality(t, s, exp, val)
+			}
 		}
 	} else {
 		t.Error(s, "should be evaluable, got", err)
+	}
+}
+
+func checkEquality(t *testing.T, s string, exp, val Thing) {
+	if exp != val && !reflect.DeepEqual(exp, val) {
+		t.Error(fmt.Sprintf("%s should generate %v of type %T but generated %v of type %T\n", 
+			s, exp, exp, val, val))
 	}
 }
 
