@@ -44,6 +44,14 @@ func TestDefineStructPtr(t *testing.T) {
 	defineTest(t, &testStruct{1, "hello"})
 }
 
+func TestDefineStructAndReturn(t *testing.T) {
+	c := NewWorld()
+	s := testStruct2{1.0, 3}
+	c.Define("_x", s)
+	c.Eval("type myStruct struct { F float64\nI int }")
+	evalTest(t, c, "myStruct{1.0, 3}", s)
+}
+
 func TestDefineBool(t *testing.T) {
 	defineTest(t, false)
 	defineTest(t, true)
@@ -190,7 +198,6 @@ type testStruct struct {
 }
 
 type testStruct2 struct {
-	I int
 	F float64
-	S *testStruct
+	I int
 }
